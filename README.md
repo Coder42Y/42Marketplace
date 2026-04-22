@@ -57,9 +57,6 @@ cd KrisVault
 
 本仓库公开的代码和文档均经过清理，不含个人身份信息、API key / token / 密码、私有配置。个人隐私文件通过 `.gitignore` 排除。
 
-### 许可证
-
-[MIT](./LICENSE)
 
 ---
 
@@ -101,6 +98,4 @@ All skill READMEs follow a unified design system. See [`DESIGN.md`](DESIGN.md).
 
 All published code and docs are sanitized. No personal info, API keys, tokens, or private configs are included. Personal files are excluded via `.gitignore`.
 
-### License
 
-[MIT](./LICENSE)
