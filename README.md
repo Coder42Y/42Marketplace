@@ -25,7 +25,7 @@
 
 ### 简介
 
-**KrisVault** 是一个开源技能（Skill）集合仓库，兼容 [Claude Code](https://claude.ai/code)、**OpenClaw** 及各类支持技能扩展的 AI 开发工具。每个技能都是独立的模块，可单独安装到对应的 AI 环境中。
+**KrisVault** 是一个开源技能（Skill）集合仓库，兼容  **Claude Code**、**OpenClaw** 及各类支持技能扩展的 AI 开发工具。每个技能都是独立的模块，可单独安装到对应的 AI 环境中。
 
 ### 技能列表
 
@@ -69,7 +69,7 @@ cd KrisVault
 
 ### About
 
-**KrisVault** is an open-source skill collection compatible with [Claude Code](https://claude.ai/code), **OpenClaw**, and other AI tools that support skill extensions. Each skill is a standalone module that can be individually installed.
+**KrisVault** is an open-source skill collection compatible with  **Claude Code**, **OpenClaw**, and other AI tools that support skill extensions. Each skill is a standalone module that can be individually installed.
 
 ### Skills
 
