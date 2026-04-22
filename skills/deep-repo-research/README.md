@@ -12,8 +12,8 @@
 ## 安装
 
 ```bash
-git clone https://github.com/Coder42Y/deep-repo-research.git
-cd deep-repo-research
+git clone https://github.com/Coder42Y/KrisVault.git
+cd KrisVault/skills/deep-repo-research
 pip install -r requirements.txt
 ```
 

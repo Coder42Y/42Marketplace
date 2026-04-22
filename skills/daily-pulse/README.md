@@ -16,16 +16,19 @@
 ## 快速开始
 
 ```bash
-# 1. 安装
-# 将本目录复制到 OpenClaw skills 目录
-cp -r daily-pulse ~/.openclaw/workspace/skills/
+# 1. 克隆仓库并进入技能目录
+git clone https://github.com/Coder42Y/KrisVault.git
+cd KrisVault/skills/daily-pulse
 
-# 2. 触发（直接跟 Agent 说）
+# 2. 安装（将本目录复制到 OpenClaw skills 目录）
+cp -r . ~/.openclaw/workspace/skills/daily-pulse
+
+# 3. 触发（直接跟 Agent 说）
 "推热点"
 "给我看看 AI"
 "GitHub 热门"
 
-# 3. 配置文件
+# 4. 配置文件
 ~/.openclaw/cron/hot-topics-prefs.json
 ```
 
