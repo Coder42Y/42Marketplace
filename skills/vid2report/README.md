@@ -1,13 +1,11 @@
 # 🎬 vid2report
 
-> Turn any Bilibili or YouTube video into a structured research report.
+> Turn any Bilibili or YouTube video into a structured research report — `/av <url>`
 
-`/av <url>` — extract transcript, transcribe audio, AI deep analysis, save to Obsidian.
-
-## Install
+## Quick Install
 
 ```bash
-cd tools/vid2report
+cd tools/vid2report/server
 ./setup.sh your-api-key
 npm start
 ```
@@ -16,8 +14,12 @@ npm start
 
 | Channel | Command |
 |---------|---------|
-| Claude Code | `/av <video-url>` |
-| CLI | `./tools/vid2report/bin/analyze-video.sh <url>` |
-| HTTP | `POST :3550/api/save-transcript` |
+| Claude Code | `/av https://www.bilibili.com/video/BVxxx` |
+| CLI | `cd tools/vid2report/server && ./analyze-video.sh BVxxx` |
+| HTTP | `curl -X POST :3550/api/save-transcript -d '{...}'` |
 
-See [`tools/vid2report/`](../../tools/vid2report/) for full docs.
+## Pipeline
+
+`URL → Extract transcript → Transcribe audio (local Whisper) → AI analysis → Markdown → Obsidian`
+
+Full docs：[`tools/vid2report/README.md`](../../tools/vid2report/README.md)
