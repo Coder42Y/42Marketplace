@@ -33,6 +33,7 @@
 |------|------|------|
 | [🎯 daily-pulse](./skills/daily-pulse/) | 每日热点推送 + 按需查询，结构化预抓取 + Agent 评分排版 | `v3.0.0` |
 | [🔍 deep-repo-research](./skills/deep-repo-research/) | 自动调研 GitHub/GitLab 仓库并生成结构化 Markdown 报告。支持 Go / Node.js / Python / Java / Rust / Ruby 项目，四种报告风格，含私有仓库支持 | `v0.1.0` |
+| [🎬 vid2report](./skills/vid2report/) | 一键将 B站/YouTube 视频变为结构化研究报告。提取文案 → 语音转录 → AI 深度分析 → 存档 Obsidian。自带 Express 后端 + Claude Code `/av` 命令 | `v1.0.0` |
 
 ### 快速开始
 
@@ -74,6 +75,7 @@ cd KrisVault
 |-------|-------------|---------|
 | [🎯 daily-pulse](./skills/daily-pulse/) | Daily hot topics push + on-demand query, structured pre-fetching + Agent scoring | `v3.0.0` |
 | [🔍 deep-repo-research](./skills/deep-repo-research/) | Research GitHub/GitLab repos and generate structured Markdown reports. Supports Go / Node.js / Python / Java / Rust / Ruby, four report styles, with private repo support | `v0.1.0` |
+| [🎬 vid2report](./skills/vid2report/) | Turn any Bilibili/YouTube video into a structured research report. Extract → transcribe → AI analysis → Obsidian. Includes Express backend + Claude Code `/av` command | `v1.0.0` |
 
 ### Quick Start
 
