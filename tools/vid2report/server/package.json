@@ -1,0 +1,17 @@
+{
+  "name": "vid2report",
+  "version": "1.0.0",
+  "private": false,
+  "description": "Turn any Bilibili or YouTube video into a structured research report — extract transcript, transcribe audio, AI deep analysis, save as Markdown",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "@ai-sdk/openai-compatible": "^2.0.35",
+    "ai": "^6.0.116",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2"
+  }
+}
