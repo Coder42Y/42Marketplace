@@ -1,35 +1,56 @@
-# deep-repo-research
+# 🔍 deep-repo-research
 
-一个 Claude Code Skill，用于自动调研 GitHub/GitLab 仓库并生成结构化 Markdown 报告。
+> 自动调研 GitHub/GitLab 仓库并生成结构化 Markdown 报告
 
-## 功能
+| | |
+|:---|:---|
+| **版本** | `v0.2.0` |
+| **状态** | `beta` |
+| **兼容** | `Claude Code` |
+| **最近更新** | `2026-05-08` |
 
-- 自动获取仓库文件列表，识别核心源码文件
-- 支持 Go / Node.js / Python / Java / Rust / Ruby 项目
-- 生成四种报告风格：概览、架构分析、部署指南、完整报告
-- 支持 GitHub 和 GitLab（含私有仓库）
+**一句话：**给一个仓库 URL，自动抓取核心源码、分析架构和部署模式，生成结构化研究报告。支持 6 种语言、4 种报告风格、私有仓库。
 
-## 安装
+---
+
+## 快速开始
 
 ```bash
+# 1. 克隆并安装
 git clone https://github.com/Coder42Y/KrisVault.git
 cd KrisVault/skills/deep-repo-research
 pip install -r requirements.txt
-```
 
-链接到 Claude Code skills 目录：
-
-```bash
+# 2. 链接到 Claude Code skills 目录
 ln -s $(pwd) ~/.claude/skills/deep-repo-research
+
+# 3. 触发（在 Claude Code 对话中）
+"调研一下 https://github.com/octocat/Hello-World"
+"帮我分析这个仓库的架构"
+"给这个项目写一份部署指南"
 ```
+
+---
+
+## 特性
+
+- **🌍 多平台** — GitHub + GitLab，公开 + 私有仓库
+- **📊 四种报告** — 概览 / 架构分析 / 部署指南 / 完整报告
+- **🐍 多语言** — Go / Node.js / Python / Java / Rust / Ruby 项目自动识别
+- **🔐 私有仓库** — 支持 GITHUB_TOKEN / GITLAB_TOKEN 环境变量
+
+---
 
 ## 使用
 
-在 Claude Code 对话中：
+### 报告风格
 
-```
-/github-research https://github.com/octocat/Hello-World --style full
-```
+| 风格 | 说明 | 阅读时长 |
+|------|------|----------|
+| `overview` | 项目简介 + 技术栈 | 2-3 min |
+| `architecture` | 架构模式 + 数据流 + 核心源码分析 | 5-8 min |
+| `deployment` | 部署方式 + 配置 + 示例 | 5 min |
+| `full` | 以上全部整合 | 10-15 min |
 
 ### 参数
 
@@ -45,38 +66,36 @@ ln -s $(pwd) ~/.claude/skills/deep-repo-research
 ```bash
 # GitHub
 export GITHUB_TOKEN=ghp_xxx
-/github-research https://github.com/yourcompany/private-repo
 
 # GitLab
 export GITLAB_TOKEN=glpat-xxx
-/github-research https://gitlab.com/yourcompany/private-repo
 ```
 
-## 自定义模板
-
-在 `~/.deep-repo-research/templates/` 下创建同名模板文件即可覆盖默认模板：
-
-```bash
-mkdir -p ~/.deep-repo-research/templates
-cp deep-repo-research/templates/full.md.j2 ~/.deep-repo-research/templates/
-# 编辑自定义模板
-```
+---
 
 ## 项目结构
 
 ```
 deep-repo-research/
-├── SKILL.md              # Claude 读取的 skill 定义
+├── SKILL.md                  # Claude 读取的 skill 定义
+├── README.md                 # 本文档
+├── requirements.txt
 ├── scripts/
-│   ├── fetch_repo.py     # 下载仓库文件
+│   ├── fetch_repo.py         # 下载仓库文件
 │   ├── analyze_structure.py  # 识别核心文件
 │   └── generate_report.py    # 生成 Markdown 报告
-└── templates/
-    ├── overview.md.j2
-    ├── architecture.md.j2
-    ├── deployment.md.j2
-    └── full.md.j2
+├── templates/
+│   ├── overview.md.j2
+│   ├── architecture.md.j2
+│   ├── deployment.md.j2
+│   └── full.md.j2
+└── tests/
+    ├── test_fetch_repo.py
+    ├── test_analyze_structure.py
+    └── test_generate_report.py
 ```
+
+---
 
 ## 开发
 
@@ -92,7 +111,24 @@ python scripts/fetch_repo.py https://github.com/octocat/Hello-World --list-only 
 python scripts/analyze_structure.py tree.json --max-files 10
 
 # 手动测试报告生成
-# 先创建 analysis_result.json，然后：
 python scripts/generate_report.py analysis_result.json --style full
 ```
 
+---
+
+## 自定义模板
+
+在 `~/.deep-repo-research/templates/` 下创建同名模板文件即可覆盖默认模板：
+
+```bash
+mkdir -p ~/.deep-repo-research/templates
+cp templates/full.md.j2 ~/.deep-repo-research/templates/
+# 编辑自定义模板
+```
+
+---
+
+## 要求
+
+- **Python** `>= 3.9`
+- **GitHub Token**（可选，用于私有仓库或提高 rate limit）

@@ -6,7 +6,7 @@
 |:---|:---|
 | **版本** | `v3.0.0` |
 | **状态** | `stable` |
-| **OpenClaw** | `>= 0.5.0` |
+| **兼容** | `Claude Code`, `OpenClaw >= 0.5.0` |
 | **最近更新** | `2026-04-22` |
 
 <strong>一句话：</strong>让 Agent 用 5 秒完成全网热点抓取，再用 LLM 做热度评分和一句话摘要，替代过去 3 分钟、44K tokens 的纯 LLM 搜索模式。
@@ -20,7 +20,10 @@
 git clone https://github.com/Coder42Y/KrisVault.git
 cd KrisVault/skills/daily-pulse
 
-# 2. 安装（将本目录复制到 OpenClaw skills 目录）
+# 2. 安装（链接到 Claude Code skills 目录）
+ln -s $(pwd) ~/.claude/skills/daily-pulse
+
+# OpenClaw 用户：
 cp -r . ~/.openclaw/workspace/skills/daily-pulse
 
 # 3. 触发（直接跟 Agent 说）
@@ -200,6 +203,9 @@ Cron 每天 9:30 自动执行。payload：`请执行每日热点推送`。
 推热点
 立即推送
 我要看热点
+催一下
+快推
+马上推
 今日热点
 热点日报
 ```
@@ -248,7 +254,7 @@ daily-pulse/
 
 ## 要求
 
-- **OpenClaw** `>= 0.5.0`（支持 Skill 系统 + Cron + isolated session）
+- **Claude Code** 或 **OpenClaw** `>= 0.5.0`（支持 Skill 系统 + Cron + isolated session）
 - **Node.js** `>= 18`（仅使用内置 `https` / `http` / `fs`，零外部依赖）
 
 ---

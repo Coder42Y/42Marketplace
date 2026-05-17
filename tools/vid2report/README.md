@@ -137,7 +137,7 @@ server/
     └── prompt.js         # Structured prompt template
 ```
 
-594 lines of JS. 3 npm dependencies. Zero frontend.
+594 lines of JS. 4 npm dependencies. Zero frontend.
 
 ## Claude Code Skill
 
