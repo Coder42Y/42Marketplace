@@ -43,8 +43,8 @@ sudo yum install -y jq git
 ## Install / 安装
 
 ```bash
-git clone https://github.com/Coder42Y/KrisVault.git
-cd KrisVault/tools/centos-claude-statusline
+git clone https://github.com/Coder42Y/42Marketplace.git
+cd 42Marketplace/tools/centos-claude-statusline
 ./install.sh
 ```
 
