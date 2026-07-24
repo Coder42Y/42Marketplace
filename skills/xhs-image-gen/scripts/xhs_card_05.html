@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1080px;
+    height: 1440px;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: #1C1917;
+    color: #FAF7F2;
+  }
+  .container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 90px 90px 80px;
+  }
+  .top-label {
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #CC4B24;
+    margin-bottom: 48px;
+  }
+  .title {
+    font-family: Georgia, serif;
+    font-size: 72px;
+    font-weight: 700;
+    color: #FAF7F2;
+    line-height: 1.15;
+    margin-bottom: 64px;
+  }
+  .title em { font-style: italic; color: #CC4B24; }
+  .takeaways {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    flex: 1;
+  }
+  .takeaway-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 28px;
+  }
+  .num {
+    font-family: Georgia, serif;
+    font-size: 56px;
+    font-weight: 700;
+    color: #CC4B24;
+    line-height: 1;
+    flex-shrink: 0;
+    width: 72px;
+  }
+  .takeaway-text {
+    font-size: 32px;
+    color: #FAF7F2;
+    line-height: 1.5;
+    padding-top: 8px;
+  }
+  .bottom-quote {
+    background: rgba(204,75,36,0.15);
+    border-left: 6px solid #CC4B24;
+    padding: 28px 36px;
+    border-radius: 0 16px 16px 0;
+    margin-top: 16px;
+  }
+  .quote-text {
+    font-size: 30px;
+    color: #FAF7F2;
+    font-style: italic;
+    line-height: 1.6;
+  }
+  .pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 32px;
+  }
+  .pill {
+    font-size: 24px;
+    color: #A8A29E;
+    border: 1px solid #333;
+    border-radius: 56px;
+    padding: 8px 24px;
+  }
+  .bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-top: 40px;
+    border-top: 1px solid #333;
+  }
+  .progress { font-size: 24px; color: #57534E; letter-spacing: 3px; font-weight: 500; }
+  .swipe-hint { font-size: 24px; color: #57534E; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="top-label">Summary</div>
+    <div class="title">记住<br><em>这四点</em></div>
+    <div class="takeaways">
+      <div class="takeaway-item">
+        <div class="num">①</div>
+        <div class="takeaway-text">Session > Window > Pane 三层结构，搞清楚就不乱</div>
+      </div>
+      <div class="takeaway-item">
+        <div class="num">②</div>
+        <div class="takeaway-text">Ctrl+b d = detach，SSH 断开不丢工作</div>
+      </div>
+      <div class="takeaway-item">
+        <div class="num">③</div>
+        <div class="takeaway-text">分屏用 Ctrl+b % 和 "，方向键切换面板</div>
+      </div>
+      <div class="takeaway-item">
+        <div class="num">④</div>
+        <div class="takeaway-text">~/.tmux.conf 配好了，用起来和 IDE 一样顺</div>
+      </div>
+    </div>
+    <div class="bottom-quote">
+      <div class="quote-text">"用了 Tmux 之后，再也没开过第二个终端窗口"</div>
+    </div>
+    <div class="pill-row">
+      <span class="pill">#Tmux</span>
+      <span class="pill">#终端</span>
+      <span class="pill">#效率工具</span>
+      <span class="pill">#程序员</span>
+    </div>
+    <div class="bottom">
+      <div class="progress">05 / 05</div>
+      <div class="swipe-hint">感谢阅读 ↑</div>
+    </div>
+  </div>
+</body>
+</html>

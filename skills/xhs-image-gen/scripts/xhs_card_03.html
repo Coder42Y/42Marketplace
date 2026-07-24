@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1080px;
+    height: 1440px;
+    overflow: hidden;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", "PingFang SC", monospace;
+    background: #1C1917;
+    color: #FAF7F2;
+  }
+  .container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 80px 90px 70px;
+  }
+  .top-label {
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #CC4B24;
+    margin-bottom: 48px;
+  }
+  .title {
+    font-family: Georgia, serif;
+    font-size: 58px;
+    font-weight: 700;
+    color: #FAF7F2;
+    line-height: 1.2;
+    margin-bottom: 56px;
+  }
+  .title em { font-style: italic; color: #CC4B24; }
+  .cmd-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex: 1;
+  }
+  .cmd-item {
+    display: flex;
+    align-items: baseline;
+    gap: 24px;
+  }
+  .cmd-action {
+    font-size: 28px;
+    color: #CC4B24;
+    font-weight: 600;
+    min-width: 200px;
+    flex-shrink: 0;
+  }
+  .cmd-code {
+    font-size: 26px;
+    color: #A8A29E;
+    background: rgba(255,255,255,0.06);
+    border-radius: 8px;
+    padding: 10px 20px;
+    flex: 1;
+    letter-spacing: 0.5px;
+  }
+  .section-label {
+    font-size: 22px;
+    color: #57534E;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 28px;
+    margin-bottom: 4px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #333;
+  }
+  .bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-top: 40px;
+    border-top: 1px solid #333;
+  }
+  .progress { font-size: 24px; color: #57534E; letter-spacing: 3px; font-weight: 500; }
+  .swipe-hint { font-size: 24px; color: #57534E; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="top-label">Cheat Sheet</div>
+    <div class="title">最常用的<br><em>Tmux 命令</em></div>
+    <div class="cmd-list">
+      <div class="section-label">Session</div>
+      <div class="cmd-item">
+        <div class="cmd-action">新建会话</div>
+        <div class="cmd-code">tmux new -s mywork</div>
+      </div>
+      <div class="cmd-item">
+        <div class="cmd-action">断开挂起</div>
+        <div class="cmd-code">Ctrl+b  then  d</div>
+      </div>
+      <div class="cmd-item">
+        <div class="cmd-action">恢复会话</div>
+        <div class="cmd-code">tmux a -t mywork</div>
+      </div>
+      <div class="cmd-item">
+        <div class="cmd-action">查看所有</div>
+        <div class="cmd-code">tmux ls</div>
+      </div>
+      <div class="section-label">Pane 分屏</div>
+      <div class="cmd-item">
+        <div class="cmd-action">垂直分</div>
+        <div class="cmd-code">Ctrl+b  %</div>
+      </div>
+      <div class="cmd-item">
+        <div class="cmd-action">水平分</div>
+        <div class="cmd-code">Ctrl+b  "</div>
+      </div>
+      <div class="cmd-item">
+        <div class="cmd-action">切换面板</div>
+        <div class="cmd-code">Ctrl+b  方向键</div>
+      </div>
+    </div>
+    <div class="bottom">
+      <div class="progress">03 / 05</div>
+      <div class="swipe-hint">左滑查看全部 →</div>
+    </div>
+  </div>
+</body>
+</html>

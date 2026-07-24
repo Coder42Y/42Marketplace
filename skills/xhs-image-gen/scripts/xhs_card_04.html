@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1080px;
+    height: 1440px;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: #FAF7F2;
+    color: #1C1917;
+  }
+  .container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 80px 90px 70px;
+  }
+  .top-label {
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #CC4B24;
+    margin-bottom: 40px;
+  }
+  .title {
+    font-family: Georgia, serif;
+    font-size: 60px;
+    font-weight: 700;
+    color: #1C1917;
+    line-height: 1.2;
+    margin-bottom: 48px;
+  }
+  .title em { font-style: italic; color: #CC4B24; }
+  .scene-tag {
+    display: inline-block;
+    background: #CC4B24;
+    color: #FFFFFF;
+    font-size: 24px;
+    font-weight: 700;
+    padding: 10px 28px;
+    border-radius: 56px;
+    margin-bottom: 36px;
+    letter-spacing: 2px;
+  }
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    flex: 1;
+  }
+  .flow-item {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+  .flow-step {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: #1C1917;
+    color: #FAF7F2;
+    font-size: 26px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .flow-text {
+    flex: 1;
+    font-size: 30px;
+    color: #1C1917;
+    padding: 20px 0;
+    border-bottom: 2px solid #E7DDD0;
+  }
+  .flow-text:last-child { border-bottom: none; }
+  .flow-arrow {
+    color: #CC4B24;
+    font-size: 32px;
+    font-weight: 700;
+    padding: 12px 0;
+    text-align: center;
+  }
+  .highlight-box {
+    background: #FDF2EC;
+    border-left: 6px solid #CC4B24;
+    padding: 20px 28px;
+    border-radius: 0 12px 12px 0;
+    margin-top: 32px;
+  }
+  .highlight-text {
+    font-size: 28px;
+    color: #9A3412;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+  .pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 24px;
+  }
+  .pill {
+    font-size: 24px;
+    color: #78716C;
+    border: 1px solid #E7DDD0;
+    border-radius: 56px;
+    padding: 8px 24px;
+    background: #FFFFFF;
+  }
+  .bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-top: 36px;
+    border-top: 1px solid #E7DDD0;
+  }
+  .progress { font-size: 24px; color: #A8A29E; letter-spacing: 3px; font-weight: 500; }
+  .swipe-hint { font-size: 24px; color: #A8A29E; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="top-label">Practical Demo</div>
+    <div class="title">SSH 断开<br><em>工作不丢</em></div>
+    <div class="scene-tag">💡 Tmux 最核心的使用场景</div>
+    <div class="flow">
+      <div class="flow-item">
+        <div class="flow-step">1</div>
+        <div class="flow-text">ssh 服务器，创建 tmux 会话</div>
+      </div>
+      <div class="flow-arrow">↓  Ctrl+b  d</div>
+      <div class="flow-item">
+        <div class="flow-step">2</div>
+        <div class="flow-text">断开 SSH，关机，回家</div>
+      </div>
+      <div class="flow-arrow">↓  重新连接</div>
+      <div class="flow-item">
+        <div class="flow-step">3</div>
+        <div class="flow-text">tmux a -t mywork  回来继续</div>
+      </div>
+    </div>
+    <div class="highlight-box">
+      <div class="highlight-text">✨ 会话在后台挂着，进程不受影响，服务继续跑</div>
+    </div>
+    <div class="pill-row">
+      <span class="pill">#SSH</span>
+      <span class="pill">#远程开发</span>
+      <span class="pill">#服务器运维</span>
+    </div>
+    <div class="bottom">
+      <div class="progress">04 / 05</div>
+      <div class="swipe-hint">左滑查看全部 →</div>
+    </div>
+  </div>
+</body>
+</html>
