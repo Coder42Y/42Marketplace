@@ -1,18 +1,24 @@
-[简体中文](./README.md) | English
+<div align="center">
+
+<img src="logo.svg" width="120" alt="logo">
+
+# 🎯 42 Marketplace
+
+An open-source skill collection for Claude Code + Codex
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Claude%20Code%20%7C%20Codex-blue.svg)](#)
 [![Type](https://img.shields.io/badge/type-skill%20collection-purple.svg)](#skills)
 
-# 🎯 42 Marketplace
+[简体中文](./README.md) ｜ English
 
-> An open-source skill collection for Claude Code + Codex
+</div>
+
+---
 
 ## Why 42 Marketplace?
 
 Each skill is a ready-to-use **capability pack** -- it gives your AI a specific skill, triggered by a single phrase. Pure-prompt ones have zero dependencies; scripted ones note their prerequisites. Pick what you need, symlink it into your skills directory, done. No framework lock-in, no workflow rewrite.
-
-A skill is fundamentally a `SKILL.md` file (plus optional scripts/assets), recognized by both Claude Code and Codex. Symlink it into your skills directory and the AI loads it at the right moment -- you just trigger it in natural language.
 
 ## Features
 
@@ -23,21 +29,31 @@ A skill is fundamentally a `SKILL.md` file (plus optional scripts/assets), recog
 
 ## Quickstart
 
-Clone the repo:
+Pick your agent, one line (clone + symlink all skills):
+
+**Claude Code:**
 
 ```bash
-git clone https://github.com/Coder42Y/42Marketplace.git ~/42Marketplace
+git clone https://github.com/Coder42Y/42Marketplace.git ~/42Marketplace && mkdir -p ~/.claude/skills && for s in ~/42Marketplace/skills/*/; do ln -sf "$s" ~/.claude/skills/; done
 ```
 
-Symlink the skill you want into Claude Code or Codex (pick as needed, replace `<name>`):
-
-```bash
-mkdir -p ~/.claude/skills && ln -s ~/42Marketplace/skills/<name> ~/.claude/skills/<name>
-```
+**Codex:**
 
 ```bash
-mkdir -p ~/.codex/skills && ln -s ~/42Marketplace/skills/<name> ~/.codex/skills/<name>
+git clone https://github.com/Coder42Y/42Marketplace.git ~/42Marketplace && mkdir -p ~/.codex/skills && for s in ~/42Marketplace/skills/*/; do ln -sf "$s" ~/.codex/skills/; done
 ```
+
+Update (symlinks follow automatically, no reinstall):
+
+```bash
+cd ~/42Marketplace && git pull
+```
+
+## How it works
+
+Each skill is a `SKILL.md` file (plus optional scripts/assets). Once symlinked into `~/.claude/skills/` or `~/.codex/skills/`, Claude Code / Codex auto-discovers it in conversation and triggers the right skill from your words.
+
+The repo is cloned to `~/42Marketplace`, with all skills symlinked in. Update with `cd ~/42Marketplace && git pull` -- symlinks follow the latest, no reinstall. To install only a few, replace the `for` loop with a single `ln -s skills/<name>`.
 
 ## Usage
 

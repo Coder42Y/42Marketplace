@@ -1,18 +1,24 @@
-简体中文 | [English](./README.en.md)
+<div align="center">
+
+<img src="logo.svg" width="120" alt="logo">
+
+# 🎯 42 Marketplace
+
+为 Claude Code + Codex 打造的开源 skill 集合
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Claude%20Code%20%7C%20Codex-blue.svg)](#)
 [![Type](https://img.shields.io/badge/type-skill%20collection-purple.svg)](#skills)
 
-# 🎯 42 Marketplace
+简体中文 ｜ [English](./README.en.md)
 
-> 为 Claude Code + Codex 打造的开源 skill 集合
+</div>
+
+---
 
 ## Why 42 Marketplace?
 
 每个 skill 是一个即拷即用的**能力包**--给 AI 装上特定技能,一句话触发。纯 prompt 的零依赖,带脚本的注明前置,挑你需要的软链进 skills 目录即可。不绑定框架,不改你的工作流。
-
-skill 本质是一个 `SKILL.md` 文件(加可选脚本/资源),Claude Code 和 Codex 都认这个格式。软链进各自的 skills 目录后,AI 会在合适的时机自动加载,你只需用自然语言触发。
 
 ## Features
 
@@ -23,21 +29,31 @@ skill 本质是一个 `SKILL.md` 文件(加可选脚本/资源),Claude Code 和 
 
 ## Quickstart
 
-clone 仓库:
+选你的 Agent,一行命令(clone + 软链所有 skill):
+
+**Claude Code:**
 
 ```bash
-git clone https://github.com/Coder42Y/42Marketplace.git ~/42Marketplace
+git clone https://github.com/Coder42Y/42Marketplace.git ~/42Marketplace && mkdir -p ~/.claude/skills && for s in ~/42Marketplace/skills/*/; do ln -sf "$s" ~/.claude/skills/; done
 ```
 
-软链你用的那个 skill 到 Claude Code 或 Codex(按需选,`<name>` 换成 skill 名):
-
-```bash
-mkdir -p ~/.claude/skills && ln -s ~/42Marketplace/skills/<name> ~/.claude/skills/<name>
-```
+**Codex:**
 
 ```bash
-mkdir -p ~/.codex/skills && ln -s ~/42Marketplace/skills/<name> ~/.codex/skills/<name>
+git clone https://github.com/Coder42Y/42Marketplace.git ~/42Marketplace && mkdir -p ~/.codex/skills && for s in ~/42Marketplace/skills/*/; do ln -sf "$s" ~/.codex/skills/; done
 ```
+
+更新(软链自动跟随,不用重装):
+
+```bash
+cd ~/42Marketplace && git pull
+```
+
+## How it works
+
+每个 skill 是一个 `SKILL.md` 文件(加可选脚本/资源)。软链到 `~/.claude/skills/` 或 `~/.codex/skills/` 后,Claude Code / Codex 在对话中自动识别,根据你的话触发对应 skill。
+
+仓库 clone 在 `~/42Marketplace`,所有 skill 软链过去。更新只要 `cd ~/42Marketplace && git pull`,软链自动跟随最新版本,不用重装。想只装某几个,把 Quickstart 的 `for` 循环换成单独软链 `skills/<name>` 即可。
 
 ## Usage
 
