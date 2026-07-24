@@ -17,8 +17,8 @@
 
 ```bash
 # 1. 克隆仓库并进入技能目录
-git clone https://github.com/Coder42Y/KrisVault.git
-cd KrisVault/skills/daily-pulse
+git clone https://github.com/Coder42Y/42Marketplace.git
+cd 42Marketplace/skills/daily-pulse
 
 # 2. 安装（链接到 Claude Code skills 目录）
 ln -s $(pwd) ~/.claude/skills/daily-pulse
