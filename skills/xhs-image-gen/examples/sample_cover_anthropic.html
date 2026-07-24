@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1080px;
+    height: 1440px;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    background: #FAF7F2;
+    color: #1C1917;
+  }
+  .container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 100px 90px 80px;
+  }
+  .top-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 30px;
+    font-weight: 600;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #CC4B24;
+    margin-bottom: 70px;
+  }
+  .dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #CC4B24;
+    flex-shrink: 0;
+  }
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 56px;
+  }
+  .title {
+    font-family: Georgia, "Times New Roman", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", serif;
+    font-size: 90px;
+    font-weight: 700;
+    line-height: 1.15;
+    color: #1C1917;
+    letter-spacing: -0.8px;
+  }
+  .title em {
+    font-style: italic;
+    color: #CC4B24;
+  }
+  .divider {
+    width: 100px;
+    height: 4px;
+    background: #CC4B24;
+  }
+  .subtitle {
+    font-size: 40px;
+    color: #57534E;
+    line-height: 1.7;
+  }
+  .pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 12px;
+  }
+  .pill {
+    font-size: 30px;
+    color: #78716C;
+    border: 1px solid #E7DDD0;
+    border-radius: 56px;
+    padding: 12px 32px;
+    background: #FFFFFF;
+  }
+  .bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-top: 56px;
+    border-top: 1px solid #E7DDD0;
+  }
+  .progress {
+    font-size: 30px;
+    color: #A8A29E;
+    letter-spacing: 3px;
+    font-weight: 500;
+  }
+  .swipe-hint {
+    font-size: 30px;
+    color: #A8A29E;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="top-label">
+      <span class="dot"></span>
+      Developer Guide
+    </div>
+    <div class="main">
+      <div class="title">Claude Code<br>完整安装<br>与<em>使用指南</em></div>
+      <div class="divider"></div>
+      <div class="subtitle">国内用户也能跑。配置 MiniMax、GLM-5 或 Kimi K2.5，终端里的 AI coding agent，开箱即用。</div>
+      <div class="pill-row">
+        <span class="pill">#Claude Code</span>
+        <span class="pill">#AI 编程</span>
+        <span class="pill">#国产大模型</span>
+        <span class="pill">#开发工具</span>
+      </div>
+    </div>
+    <div class="bottom">
+      <div class="progress">01 / 08</div>
+      <div class="swipe-hint">左滑查看全部 →</div>
+    </div>
+  </div>
+</body>
+</html>
