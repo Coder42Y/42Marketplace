@@ -45,3 +45,6 @@ temp/
 
 # Node
 node_modules/
+
+# Superpowers scratch (visual companion / sdd)
+.superpowers/
