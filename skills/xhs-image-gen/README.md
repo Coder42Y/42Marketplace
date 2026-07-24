@@ -6,7 +6,7 @@
 |:---|:---|
 | **版本** | `v0.1.0` |
 | **状态** | `beta` |
-| **兼容** | `Claude Code`, `OpenClaw` |
+| **兼容** | `Claude Code`, `Codex` |
 | **最近更新** | `2026-07-24` |
 
 **一句话:**把文案/文章/主题转成 1-10 张小红书风格 PNG 卡片,3 种风格(anthropic/notion/minimal),HTML 是中间产物,最终交付 PNG。
