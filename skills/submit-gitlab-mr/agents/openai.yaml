@@ -1,0 +1,4 @@
+interface:
+  display_name: "Submit GitLab MR"
+  short_description: "Fast conflict-checked GitLab MR submission"
+  default_prompt: "Use $submit-gitlab-mr to conflict-check and submit the current branch as a GitLab MR."
