@@ -1,0 +1,23 @@
+{
+  "skill_name": "algo-solver",
+  "evals": [
+    {
+      "id": 1,
+      "name": "solve-simple-hashtable",
+      "prompt": "帮我看下这道力扣题怎么做：\n\n给定一个整数数组 nums 和一个整数目标值 target，请你在该数组中找出和为目标值 target 的那两个整数，并返回它们的数组下标。你可以假设每种输入只会对应一个答案，并且你不能使用两次相同的元素。可以按任意顺序返回答案。\n\n示例 1：输入 nums = [2,7,11,15], target = 9，输出 [0,1]\n示例 2：输入 nums = [3,2,4], target = 6，输出 [1,2]",
+      "expected_output": "解题模式。应给出：一句话题意、思路（暴力→哈希表优化→最优）、复杂度 O(n)/O(n)、Python3 在前 Java 在后的双语言代码（贴 Solution 签名、无 main/自测块、关键行内注释）、边界与手动模拟、follow-up。难度 Easy，讲解应精炼。题解保存为 md 到项目目录（哈希表/two-sum 类考点）。"
+    },
+    {
+      "id": 2,
+      "name": "solve-hard-dp-stack",
+      "prompt": "最长有效括号，hard：\n\n给你一个只包含 '(' 和 ')' 的字符串，找出最长有效（格式正确且连续）括号子串的长度。\n\n示例：s = \")()())\" 输出 4；s = \"\" 输出 0；s = \"(()\" 输出 2。\n\n给个详细点的思路，我面试要能讲清楚，最好多几种解法对比。",
+      "expected_output": "解题模式，Hard 难度应讲透。应给出：题意浓缩、思路（关键观察 + 至少 DP/栈两种解法的推导，讲清怎么想到）、复杂度对比、Python3 在前 Java 在后双语言代码、边界与 dry run、多条 follow-up。深度自适应到难题档。保存为 md。"
+    },
+    {
+      "id": 3,
+      "name": "analyze-plain-code-stack",
+      "prompt": "这段代码我没看懂，帮我讲讲它在干嘛：\n\n```python\ndef largestRectangleArea(heights):\n    stack = []\n    max_area = 0\n    for i, h in enumerate(heights + [0]):\n        while stack and heights[stack[-1]] > h:\n            height = heights[stack.pop()]\n            width = i if not stack else i - stack[-1] - 1\n            max_area = max(max_area, height * width)\n        stack.append(i)\n    return max_area\n```",
+      "expected_output": "分析模式（输入是纯代码）。应：从代码反推题意（柱状图最大矩形）、识别手法（单调栈）、逐段讲解（不是逐行，讲清栈维护什么、为什么要 append 0 哨兵、width 怎么算）、用最小例子 dry run 走一遍状态变化、复杂度 O(n)、可优化点/易错坑。Python3/Java 双语言重写不是必须（已有 Python 代码），但可补充 Java 版。"
+    }
+  ]
+}

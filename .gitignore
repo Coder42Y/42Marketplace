@@ -42,3 +42,6 @@ temp/
 .vscode/
 .idea/
 *.iml
+
+# Node
+node_modules/
