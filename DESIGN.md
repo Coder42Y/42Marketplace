@@ -1,4 +1,4 @@
-# KrisVault Skills README Design System
+# 42 Marketplace Skills README Design System
 
 > 本规范约束 `skills/<skill-name>/README.md` 的头部设计。
 > 所有 skill README 的开头必须遵循此模板，保持品牌一致性。
@@ -7,7 +7,7 @@
 
 ## 设计原则
 
-1. **一眼识别** — 从任意 skill 的 README 能立刻认出这是 KrisVault 技能库
+1. **一眼识别** — 从任意 skill 的 README 能立刻认出这是 42 Marketplace 技能库
 2. **信息密度高** — 首屏包含：它是啥、状态如何、怎么用、关键数据
 3. **不花哨** — 不用 ASCII art、不用 badge 泛滥、不用复杂排版
 4. **中英文混排自然** — 标题/关键标签用中文，技术细节用英文

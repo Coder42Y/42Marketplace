@@ -17,8 +17,8 @@
 
 ```bash
 # 1. 克隆并安装
-git clone https://github.com/Coder42Y/KrisVault.git
-cd KrisVault/skills/deep-repo-research
+git clone https://github.com/Coder42Y/42Marketplace.git
+cd 42Marketplace/skills/deep-repo-research
 pip install -r requirements.txt
 
 # 2. 链接到 Claude Code skills 目录

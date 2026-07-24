@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1>🎯 <code>KrisVault</code></h1>
+<h1>🎯 42 Marketplace</h1>
 
 <p>
   <b>为 Claude Code、OpenClaw 及更多 AI 工具打造的开源技能与工具集合</b><br>
@@ -25,7 +25,7 @@
 
 ### 简介
 
-**KrisVault** 是一个面向 **Claude Code**、**OpenClaw** 及其他 AI 开发环境的开源技能与工具集合。`skills/` 中的技能可独立安装，`tools/` 中的程序可单独运行。
+**42 Marketplace** 是一个面向 **Claude Code**、**OpenClaw** 及其他 AI 开发环境的开源技能与工具集合。`skills/` 中的技能可独立安装，`tools/` 中的程序可单独运行。
 
 ### 技能列表
 
@@ -44,8 +44,8 @@
 ### 快速开始
 
 ```bash
-git clone https://github.com/Coder42Y/KrisVault.git
-cd KrisVault
+git clone https://github.com/Coder42Y/42Marketplace.git
+cd 42Marketplace
 ```
 
 **Claude Code 用户：** 将技能目录软链接到 `~/.claude/skills/`：
@@ -83,7 +83,7 @@ ln -s $(pwd)/skills/vid2report ~/.claude/skills/vid2report
 
 ### About
 
-**KrisVault** is an open-source collection of skills and tools for **Claude Code**, **OpenClaw**, and other AI development environments. Skills under `skills/` are independently installable; programs under `tools/` run standalone.
+**42 Marketplace** is an open-source collection of skills and tools for **Claude Code**, **OpenClaw**, and other AI development environments. Skills under `skills/` are independently installable; programs under `tools/` run standalone.
 
 ### Skills
 
@@ -102,8 +102,8 @@ ln -s $(pwd)/skills/vid2report ~/.claude/skills/vid2report
 ### Quick Start
 
 ```bash
-git clone https://github.com/Coder42Y/KrisVault.git
-cd KrisVault
+git clone https://github.com/Coder42Y/42Marketplace.git
+cd 42Marketplace
 ```
 
 **Claude Code users:** Symlink skill directories into `~/.claude/skills/`:

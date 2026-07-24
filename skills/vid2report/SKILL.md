@@ -14,7 +14,7 @@ Run the full video analysis pipeline via the standalone server at `http://localh
 ## Workflow
 
 1. Parse the user's URL → extract `videoId` and `service` (bilibili / youtube)
-2. Ensure the server is running: check `GET http://localhost:3550/ping`. If not running, start it from the KrisVault repo root: `cd tools/vid2report/server && npm start &`
+2. Ensure the server is running: check `GET http://localhost:3550/ping`. If not running, start it from the 42 Marketplace repo root: `cd tools/vid2report/server && npm start &`
 3. Call the API (timeout 600s):
    ```
    curl -s -X POST http://localhost:3550/api/save-transcript \
