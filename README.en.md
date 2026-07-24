@@ -31,6 +31,7 @@ A skill is fundamentally a `SKILL.md` file (plus optional scripts/assets), recog
 - 🎯 [daily-pulse](./skills/daily-pulse/) - Daily hot topics push + on-demand query
 - 🔍 [deep-repo-research](./skills/deep-repo-research/) - Research GitHub/GitLab repos into structured reports
 - 🎬 [vid2report](./skills/vid2report/) - Turn Bilibili/YouTube videos into structured research reports
+- 🛡️ [vps-proxy-deploy](https://github.com/Coder42Y/vps-proxy-deploy) - Safely deploy a relay on a VPS (Hysteria2/VLESS etc.) ↗ separate repo
 
 ## Install
 

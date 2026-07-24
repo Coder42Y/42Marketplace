@@ -31,6 +31,7 @@ skill 本质是一个 `SKILL.md` 文件(加可选脚本/资源),Claude Code 和 
 - 🎯 [daily-pulse](./skills/daily-pulse/) — 每日热点推送 + 按需查询
 - 🔍 [deep-repo-research](./skills/deep-repo-research/) — 自动调研 GitHub/GitLab 仓库生成报告
 - 🎬 [vid2report](./skills/vid2report/) — B站/YouTube 视频转结构化研究报告
+- 🛡️ [vps-proxy-deploy](https://github.com/Coder42Y/vps-proxy-deploy) - 在 VPS 上安全部署网络中转(Hysteria2/VLESS 等)↗ 独立仓
 
 ## 安装
 
