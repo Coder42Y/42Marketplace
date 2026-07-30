@@ -1,0 +1,90 @@
+{
+  "name": "42marketplace",
+  "owner": {
+    "name": "Coder42Y",
+    "url": "https://github.com/Coder42Y"
+  },
+  "plugins": [
+    {
+      "name": "algo-solver",
+      "source": "./skills/algo-solver",
+      "description": "算法/编程题的讲解与题解生成，面向面试备战",
+      "version": "1.0.0",
+      "author": {
+        "name": "Coder42Y"
+      }
+    },
+    {
+      "name": "daily-pulse",
+      "source": "./skills/daily-pulse",
+      "description": "每日热点推送 + 按需查询",
+      "version": "1.0.0",
+      "author": {
+        "name": "Coder42Y"
+      }
+    },
+    {
+      "name": "deep-repo-research",
+      "source": "./skills/deep-repo-research",
+      "description": "Use when asked to research or investigate a GitHub or GitLab repository, analyze its archi",
+      "version": "1.0.0",
+      "author": {
+        "name": "Coder42Y"
+      }
+    },
+    {
+      "name": "design-html",
+      "source": "./skills/design-html",
+      "description": "把一个 idea、讨论或方案沉淀成一份设计说明 HTML 文档",
+      "version": "1.0.0",
+      "author": {
+        "name": "Coder42Y"
+      }
+    },
+    {
+      "name": "elder-blessing-comments",
+      "source": "./skills/elder-blessing-comments",
+      "description": "Use when the user wants Chinese social media blessing comments, Douyin/Xiaohongshu/WeChat ",
+      "version": "1.0.0",
+      "author": {
+        "name": "Coder42Y"
+      }
+    },
+    {
+      "name": "submit-gitlab-mr",
+      "source": "./skills/submit-gitlab-mr",
+      "description": "Use when the user wants to prepare, submit, create, or update a merge request for the curr",
+      "version": "1.0.0",
+      "author": {
+        "name": "Coder42Y"
+      }
+    },
+    {
+      "name": "analyze-video",
+      "source": "./skills/vid2report",
+      "description": "Use when the user provides a B站 or YouTube video link and wants it analyzed, summarized, t",
+      "version": "1.0.0",
+      "author": {
+        "name": "Coder42Y"
+      }
+    },
+    {
+      "name": "xhs-image-gen",
+      "source": "./skills/xhs-image-gen",
+      "description": "This skill should be used when the user asks to generate Xiaohongshu/RedNote visual cards,",
+      "version": "1.0.0",
+      "author": {
+        "name": "Coder42Y"
+      }
+    },
+    {
+      "name": "zhihu-notes",
+      "source": "./skills/zhihu-notes",
+      "description": "生成知乎风格的优质长文文案",
+      "version": "1.0.0",
+      "author": {
+        "name": "Coder42Y"
+      }
+    }
+  ]
+}

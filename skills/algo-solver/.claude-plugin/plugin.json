@@ -1,0 +1,8 @@
+{
+  "name": "algo-solver",
+  "description": "算法/编程题的讲解与题解生成，面向面试备战",
+  "version": "1.0.0",
+  "author": {
+    "name": "Coder42Y"
+  }
+}

@@ -29,25 +29,35 @@
 
 ## Quickstart
 
-选你的 Agent,一行命令(clone + 软链所有 skill):
+### 方式一:CC plugin marketplace(推荐,`/plugins` 里可见)
+
+本仓库已注册为 Claude Code plugin marketplace。在 Claude Code 会话里:
+
+```
+/plugin marketplace add Coder42Y/42Marketplace
+/plugin install algo-solver@42marketplace   # 按需逐个装
+/reload-plugins
+```
+
+装后在 `/plugins` 的 installed marketplace 能看到 `42marketplace`。skill 走 plugin namespace(如 `/algo-solver:...`),也可直接自然语言触发。
+
+### 方式二:standalone 软链(不走 `/plugins`,skill 名短无 namespace)
+
+clone + 软链所有 skill(`${s%/}` 去尾斜杠,避免软链目标带尾斜杠):
 
 **Claude Code:**
 
 ```bash
-git clone https://github.com/Coder42Y/42Marketplace.git ~/42Marketplace && mkdir -p ~/.claude/skills && for s in ~/42Marketplace/skills/*/; do ln -sf "$s" ~/.claude/skills/; done
+git clone https://github.com/Coder42Y/42Marketplace.git ~/42Marketplace && mkdir -p ~/.claude/skills && for s in ~/42Marketplace/skills/*/; do ln -sf "${s%/}" ~/.claude/skills/; done
 ```
 
 **Codex:**
 
 ```bash
-git clone https://github.com/Coder42Y/42Marketplace.git ~/42Marketplace && mkdir -p ~/.codex/skills && for s in ~/42Marketplace/skills/*/; do ln -sf "$s" ~/.codex/skills/; done
+git clone https://github.com/Coder42Y/42Marketplace.git ~/42Marketplace && mkdir -p ~/.codex/skills && for s in ~/42Marketplace/skills/*/; do ln -sf "${s%/}" ~/.codex/skills/; done
 ```
 
-更新(软链自动跟随,不用重装):
-
-```bash
-cd ~/42Marketplace && git pull
-```
+更新(软链自动跟随):`cd ~/42Marketplace && git pull`
 
 ## How it works
 
