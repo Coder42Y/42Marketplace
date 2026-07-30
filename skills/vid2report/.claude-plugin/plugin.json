@@ -1,0 +1,8 @@
+{
+  "name": "analyze-video",
+  "description": "Use when the user provides a B站 or YouTube video link and wants it analyzed, summarized, t",
+  "version": "1.0.0",
+  "author": {
+    "name": "Coder42Y"
+  }
+}

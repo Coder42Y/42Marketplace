@@ -1,0 +1,8 @@
+{
+  "name": "daily-pulse",
+  "description": "每日热点推送 + 按需查询",
+  "version": "1.0.0",
+  "author": {
+    "name": "Coder42Y"
+  }
+}

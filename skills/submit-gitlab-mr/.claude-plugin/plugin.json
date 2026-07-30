@@ -1,0 +1,8 @@
+{
+  "name": "submit-gitlab-mr",
+  "description": "Use when the user wants to prepare, submit, create, or update a merge request for the curr",
+  "version": "1.0.0",
+  "author": {
+    "name": "Coder42Y"
+  }
+}
