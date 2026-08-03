@@ -86,6 +86,7 @@ git clone https://github.com/Coder42Y/42Marketplace.git ~/42Marketplace && mkdir
 - 📱 [xhs-image-gen](./skills/xhs-image-gen/) - 小红书图文卡片 `beta`
 - 🎯 [daily-pulse](./skills/daily-pulse/) - 每日热点推送 + 按需查询
 - 🔍 [deep-repo-research](./skills/deep-repo-research/) - 自动调研 GitHub/GitLab 仓库生成报告
+- 📝 [ntn-todo](./skills/ntn-todo/) - 查询管理 Notion 待办列表 + 维护本周进度概览,首次自动引导
 - 🎬 [vid2report](./skills/vid2report/) - B站/YouTube 视频转结构化研究报告
 - 🛡️ [vps-proxy-deploy](https://github.com/Coder42Y/vps-proxy-deploy) - 在 VPS 上安全部署网络中转(Hysteria2/VLESS 等)↗ 独立仓
 
