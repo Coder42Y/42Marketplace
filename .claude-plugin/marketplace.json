@@ -85,6 +85,15 @@
       "author": {
         "name": "Coder42Y"
       }
+    },
+    {
+      "name": "ntn-todo",
+      "source": "./skills/ntn-todo",
+      "description": "查询管理 Notion 待办列表 + 维护工作进度同步页本周进度概览,首次自动引导,零配置适配任意含 status 字段的待办库",
+      "version": "1.0.0",
+      "author": {
+        "name": "Coder42Y"
+      }
     }
   ]
 }
