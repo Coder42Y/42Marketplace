@@ -1,13 +1,13 @@
 <div align="center">
 
-<img src="logo.svg" width="120" alt="logo">
+<img src="logo.svg" width="120" alt="42 Marketplace logo">
 
 # 🎯 42 Marketplace
 
-为 Claude Code + Codex 打造的开源 skill 集合
+为 Claude Code、Codex 和 pi 打造的开源技能集合
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Claude%20Code%20%7C%20Codex-blue.svg)](#)
+[![Platform](https://img.shields.io/badge/platform-Claude%20Code%20%7C%20Codex%20%7C%20pi-blue.svg)](#skills)
 [![Type](https://img.shields.io/badge/type-skill%20collection-purple.svg)](#skills)
 
 简体中文 ｜ [English](./README.en.md)
@@ -18,90 +18,132 @@
 
 ## Why 42 Marketplace?
 
-每个 skill 是一个即拷即用的**能力包**--给 AI 装上特定技能,一句话触发。纯 prompt 的零依赖,带脚本的注明前置,挑你需要的软链进 skills 目录即可。不绑定框架,不改你的工作流。
+每个 skill 是一个即拷即用的**能力包**，给 AI 装上特定技能，一句话触发。纯 prompt 技能零依赖，带脚本的注明前置条件，按需安装即可。
+
+大部分技能采用通用 `SKILL.md` 格式；涉及启动器、hooks 或特定工具的技能有平台限制，请先查看各自 README。
 
 ## Features
 
-- 📦 **即拷即用** - 纯 prompt skill 零依赖,clone 下来软链即用
-- 🎯 **CC + Codex 通用** - 都是 SKILL.md 格式,两个端都能加载
-- 🧪 **实战沉淀** - 每个 skill 都在真实工作流里用过、打磨过,不是 demo
-- 🔓 **开源 MIT** - 随便用随便改
+- 📦 **按需安装** — 纯 prompt 技能 clone 后软链即可使用。
+- 🎯 **多平台收录** — 支持 Claude Code、Codex 和 pi；专用技能单独标注。
+- 🧪 **实战迭代** — 技能文档标明状态和验证范围，实验功能不冒充稳定支持。
+- 🔓 **开源 MIT** — 自由使用和修改。
 
 ## Quickstart
 
-### 方式一:CC plugin marketplace(推荐,`/plugins` 里可见)
+### 方式一：Claude Code plugin marketplace
 
-本仓库已注册为 Claude Code plugin marketplace。在 Claude Code 会话里:
+在 Claude Code 会话中执行，按需安装插件：
 
-```
+```text
 /plugin marketplace add Coder42Y/42Marketplace
-/plugin install algo-solver@42marketplace   # 按需逐个装
+/plugin install algo-solver@42marketplace
 /reload-plugins
 ```
 
-装后在 `/plugins` 的 installed marketplace 能看到 `42marketplace`。skill 走 plugin namespace(如 `/algo-solver:...`),也可直接自然语言触发。
+安装后可在 `/plugins` 中查看 `42marketplace`。技能使用插件命名空间，也可通过自然语言触发。
 
-### 方式二:standalone 软链(不走 `/plugins`,skill 名短无 namespace)
+> `cc-auto-worktree` 安装后还需要运行它的 `scripts/install.sh`。`pi-auto-worktree` 是 pi 专用技能，不在 CC 插件清单内。
 
-clone + 软链所有 skill(`${s%/}` 去尾斜杠,避免软链目标带尾斜杠):
+### 方式二：Claude Code / Codex 独立技能
 
-**Claude Code:**
-
-```bash
-git clone https://github.com/Coder42Y/42Marketplace.git ~/42Marketplace && mkdir -p ~/.claude/skills && for s in ~/42Marketplace/skills/*/; do ln -sf "${s%/}" ~/.claude/skills/; done
-```
-
-**Codex:**
+先克隆仓库一次；已有副本请直接更新，不要重复 clone：
 
 ```bash
-git clone https://github.com/Coder42Y/42Marketplace.git ~/42Marketplace && mkdir -p ~/.codex/skills && for s in ~/42Marketplace/skills/*/; do ln -sf "${s%/}" ~/.codex/skills/; done
+git clone https://github.com/Coder42Y/42Marketplace.git ~/42Marketplace
 ```
 
-更新(软链自动跟随):`cd ~/42Marketplace && git pull`
+选择平台，安装需要的技能。以下以 `algo-solver` 为例，可替换为兼容当前平台的技能名。
+
+**Claude Code：**
+
+```bash
+mkdir -p ~/.claude/skills
+ln -s ~/42Marketplace/skills/algo-solver ~/.claude/skills/algo-solver
+```
+
+**Codex：**
+
+```bash
+mkdir -p ~/.codex/skills
+ln -s ~/42Marketplace/skills/algo-solver ~/.codex/skills/algo-solver
+```
+
+同名路径已存在时，请先检查，不要强制覆盖。不要把平台专用技能批量装到其他平台。
+
+### 方式三：pi 自动 worktree
+
+先按上一步克隆仓库，再安装 pi 启动器、技能和命名扩展：
+
+```bash
+bash ~/42Marketplace/skills/pi-auto-worktree/scripts/install.sh
+export PATH="$HOME/.local/bin:$PATH"
+hash -r
+```
+
+之后从 Git 主工作区运行 `pi` 即可。非 Git 目录严格跳过。完整依赖、命名与恢复规则见 [pi-auto-worktree 文档](./skills/pi-auto-worktree/)。
+
+### 更新
+
+```bash
+git -C ~/42Marketplace pull --ff-only
+```
+
+以上独立安装方式使用软链，源码更新会自动跟随；重新启动对应工具生效。CC 插件安装方式请通过插件管理功能更新。
 
 ## How it works
 
-每个 skill 是一个 `SKILL.md` 文件(加可选脚本/资源)。软链到 `~/.claude/skills/` 或 `~/.codex/skills/` 后,Claude Code / Codex 在对话中自动识别,根据你的话触发对应 skill。
+每个技能由 `SKILL.md` 和可选脚本、资源组成。工具发现技能后，根据用户请求按需读取定义并执行。
 
-仓库 clone 在 `~/42Marketplace`,所有 skill 软链过去。更新只要 `cd ~/42Marketplace && git pull`,软链自动跟随最新版本,不用重装。想只装某几个,把 Quickstart 的 `for` 循环换成单独软链 `skills/<name>` 即可。
+普通技能软链即可使用；平台专用功能可能需要额外安装。比如 `cc-auto-worktree` 注册 Claude Code hook，`pi-auto-worktree` 则在 pi 启动前创建并进入工作区。两者不能互换。
 
 ## Usage
 
-装好后,对 AI 用自然语言触发:
+安装后，对 AI 用自然语言触发：
 
 ```text
-"帮我沉淀一下这个登录方案的设计 HTML"   -> design-html
-"讲一下力扣 300 最长递增子序列"         -> algo-solver
-"把这篇文章生成小红书图文"              -> xhs-image-gen
-"帮我提个 MR"                          -> submit-gitlab-mr
+“帮我沉淀一下这个登录方案的设计 HTML”  → design-html
+“讲一下力扣 300 最长递增子序列”        → algo-solver
+“把这篇文章生成小红书图文”             → xhs-image-gen
+“帮我提个 MR”                         → submit-gitlab-mr
 ```
 
 ## Skills
 
-• 🌳 [cc-auto-worktree](./skills/cc-auto-worktree/) - 仅 Claude Code：新会话自动进入独立 worktree；安装后需运行该技能的 `scripts/install.sh`，不是 pi 版
+### 平台专用
 
-- 🎨 [design-html](./skills/design-html/) - 把 idea 沉淀成 Anthropic 暖色风设计说明 HTML
-- ✍️ [zhihu-notes](./skills/zhihu-notes/) - 知乎风格长文生成
-- 🌺 [elder-blessing-comments](./skills/elder-blessing-comments/) - 长辈风祝福文案
-- 🔀 [submit-gitlab-mr](./skills/submit-gitlab-mr/) - GitLab MR 提交(glab CLI)
-- 🧮 [algo-solver](./skills/algo-solver/) - 算法题解(Python3 + Java)
-- 📱 [xhs-image-gen](./skills/xhs-image-gen/) - 小红书图文卡片 `beta`
-- 🎯 [daily-pulse](./skills/daily-pulse/) - 每日热点推送 + 按需查询
-- 🔍 [deep-repo-research](./skills/deep-repo-research/) - 自动调研 GitHub/GitLab 仓库生成报告
-- 📝 [ntn-todo](./skills/ntn-todo/) - 查询管理 Notion 待办列表 + 维护本周进度概览,首次自动引导
-- 🎬 [vid2report](./skills/vid2report/) - B站/YouTube 视频转结构化研究报告
-- 🛡️ [vps-proxy-deploy](https://github.com/Coder42Y/vps-proxy-deploy) - 在 VPS 上安全部署网络中转(Hysteria2/VLESS 等)↗ 独立仓
+- 🌳 [cc-auto-worktree](./skills/cc-auto-worktree/) — **Claude Code 专用**：新会话自动进入独立 worktree；安装技能后需运行其安装脚本。
+- 🌱 [pi-auto-worktree](./skills/pi-auto-worktree/) — **pi 专用**：启动前隔离工作区，首条任务命名分支和会话；非 Git 跳过，目录保持稳定。`beta`
+
+### 通用技能与工具集成
+
+通用格式不代表没有外部依赖；请以各技能 README 的兼容性和前置条件为准。
+
+- 🎨 [design-html](./skills/design-html/) — 把 idea 沉淀成 Anthropic 暖色风设计说明 HTML。
+- ✍️ [zhihu-notes](./skills/zhihu-notes/) — 知乎风格长文生成。
+- 🌺 [elder-blessing-comments](./skills/elder-blessing-comments/) — 长辈风祝福文案。
+- 🔀 [submit-gitlab-mr](./skills/submit-gitlab-mr/) — GitLab MR 提交，需要 glab CLI。
+- 🧮 [algo-solver](./skills/algo-solver/) — 算法题解，支持 Python 3 和 Java。
+- 📱 [xhs-image-gen](./skills/xhs-image-gen/) — 小红书图文卡片。`beta`
+- 🎯 [daily-pulse](./skills/daily-pulse/) — 每日热点推送与按需查询。
+- 🔍 [deep-repo-research](./skills/deep-repo-research/) — 自动调研 GitHub / GitLab 仓库并生成报告。
+- 📝 [ntn-todo](./skills/ntn-todo/) — 查询管理 Notion 待办，维护本周进度概览，首次自动引导。
+- 🎬 [vid2report](./skills/vid2report/) — B 站 / YouTube 视频转结构化研究报告。
+
+### 独立仓库
+
+- 🛡️ [vps-proxy-deploy](https://github.com/Coder42Y/vps-proxy-deploy) — 在 VPS 上安全部署网络中转，支持 Hysteria2 / VLESS 等。
 
 ## Contributing
 
-1. skill 放 `skills/<name>/`,独立工具放 `tools/<name>/`
-2. 每个 skill 含 `SKILL.md`(技能定义)和 `README.md`(用户文档)
-3. 遵循 [`DESIGN.md`](./DESIGN.md) 的设计规范
+1. 技能放在 `skills/<name>/`，独立工具放在 `tools/<name>/`。
+2. 每个技能包含 `SKILL.md`（技能定义）和 `README.md`（用户文档）。
+3. 遵循 [`DESIGN.md`](./DESIGN.md) 的文档设计规范，并注明平台、依赖和验证范围。
 
 ## License
 
-MIT
+[MIT](./LICENSE)
 
 ## 隐私
 
-本仓公开的代码和文档均经过清理,不含个人信息、API key / token / 密码、私有配置。个人文件通过 `.gitignore` 排除。
+公开代码和文档不应包含个人信息、API key、token、密码或私有配置。提交前请检查并清理；个人文件应通过 `.gitignore` 排除。
