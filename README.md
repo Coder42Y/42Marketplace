@@ -78,6 +78,8 @@ git clone https://github.com/Coder42Y/42Marketplace.git ~/42Marketplace && mkdir
 
 ## Skills
 
+• 🌳 [pi-auto-worktree](./skills/pi-auto-worktree/) - 仅 Claude Code：新会话自动进入独立 worktree；安装后需运行该技能的 `scripts/install.sh`，不是 pi 版
+
 - 🎨 [design-html](./skills/design-html/) - 把 idea 沉淀成 Anthropic 暖色风设计说明 HTML
 - ✍️ [zhihu-notes](./skills/zhihu-notes/) - 知乎风格长文生成
 - 🌺 [elder-blessing-comments](./skills/elder-blessing-comments/) - 长辈风祝福文案
