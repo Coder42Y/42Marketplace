@@ -6,6 +6,15 @@
   },
   "plugins": [
     {
+      "name": "cc-auto-worktree",
+      "source": "./skills/cc-auto-worktree",
+      "description": "Claude Code 专用：新会话通过 SessionStart hook + EnterWorktree 自动进入独立 worktree；非 pi 启动器版",
+      "version": "1.0.0",
+      "author": {
+        "name": "吴宏宇"
+      }
+    },
+    {
       "name": "algo-solver",
       "source": "./skills/algo-solver",
       "description": "算法/编程题的讲解与题解生成，面向面试备战",
