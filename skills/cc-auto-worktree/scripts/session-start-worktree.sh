@@ -41,7 +41,7 @@ if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 - 用户的消息不涉及任何子仓库的代码改动（纯问答、只读、或跨仓库操作）→ 不建 worktree，正常回答。
 - 用户明确说不要 worktree → 不建，不追问。
 - 进入后一行告知路径与分支；这种 path 模式进入的 worktree 退出会话时不会自动清理，任务结束时提醒用户可用 \`git -C <repo> worktree remove\` 清理。
-细则见 skill: pi-auto-worktree。"
+细则见 skill: cc-auto-worktree。"
   jq -n --arg ctx "$ctx" '{hookSpecificOutput:{hookEventName:"SessionStart",additionalContext:$ctx}}'
   exit 0
 fi
@@ -65,6 +65,6 @@ ctx="[auto-worktree] 本会话在 git 仓库 \`$cwd\`（分支 $branch）的主�
 - 例外：用户第一条消息明确说不要 worktree / 在当前目录做 → 不创建，并且不要再问。
 - 进入后用一行告知用户 worktree 路径与分支，然后继续正常处理用户的消息。
 - 会话中途不要主动调用 ExitWorktree；退出会话时 harness 会询问 keep/remove。
-细则见 skill: pi-auto-worktree。"
+细则见 skill: cc-auto-worktree。"
 
 jq -n --arg ctx "$ctx" '{hookSpecificOutput:{hookEventName:"SessionStart",additionalContext:$ctx}}'

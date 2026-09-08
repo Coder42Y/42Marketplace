@@ -6,8 +6,8 @@
   },
   "plugins": [
     {
-      "name": "pi-auto-worktree",
-      "source": "./skills/pi-auto-worktree",
+      "name": "cc-auto-worktree",
+      "source": "./skills/cc-auto-worktree",
       "description": "Claude Code 专用：新会话通过 SessionStart hook + EnterWorktree 自动进入独立 worktree；非 pi 启动器版",
       "version": "1.0.0",
       "author": {

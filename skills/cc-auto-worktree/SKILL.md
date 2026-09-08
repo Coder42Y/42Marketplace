@@ -1,5 +1,5 @@
 ---
-name: pi-auto-worktree
+name: cc-auto-worktree
 description: 让 Claude Code TUI 像 GUI 一样每个新会话自动进入独立 worktree。当会话上下文出现 `[auto-worktree]`、用户说「自动 worktree」「每次开会话自动建 worktree」「安装/关闭 auto worktree」「进入/退出 worktree」「为什么没建 worktree」时触发；覆盖 git 仓库、多仓库工作区、纯非 git 目录三种启动位置。不用于普通的切分支、建分支需求。
 version: 1.0.0
 metadata:

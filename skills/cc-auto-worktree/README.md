@@ -1,6 +1,6 @@
-【pi-auto-worktree】
+【cc-auto-worktree】
 
-本包是 auto-worktree 的 Claude Code（CC）版，仅发布名为 `pi-auto-worktree`，不是 pi 启动器版。保留上游的环境变量、关闭标记与 hook 行为。
+本包是 auto-worktree 的 Claude Code（CC）版，发布名为 `cc-auto-worktree`，不是 pi 启动器版。保留上游的环境变量、关闭标记与 hook 行为。
 
 > 让 Claude Code TUI 像 GUI 一样，每个新会话自动进入独立 worktree 再开始改代码；给所有在终端里用 Claude Code 的同事。
 
@@ -17,8 +17,8 @@ Claude GUI 每开一个会话都会自动建 worktree，主工作区永远干净
 ```bash
 # 1. 装 skill（三选一）
 /plugin marketplace add Coder42Y/42Marketplace
-/plugin install pi-auto-worktree@42marketplace          # 方式一：plugin
-ln -sf ~/42Marketplace/skills/pi-auto-worktree ~/.claude/skills/   # 方式二：软链
+/plugin install cc-auto-worktree@42marketplace          # 方式一：plugin
+ln -sf ~/42Marketplace/skills/cc-auto-worktree ~/.claude/skills/   # 方式二：软链
 # 方式三：整个目录拷到 ~/.claude/skills/
 
 # 2. 注册 hook（幂等，可重复跑）

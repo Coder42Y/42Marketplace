@@ -1,5 +1,5 @@
 {
-  "name": "pi-auto-worktree",
+  "name": "cc-auto-worktree",
   "description": "让 Claude Code TUI 像 GUI 一样每个新会话自动进入独立 worktree（SessionStart hook + EnterWorktree，覆盖 git 仓库 / 多仓库工作区 / 非 git 目录）",
   "version": "1.0.0",
   "author": { "name": "吴宏宇" }
