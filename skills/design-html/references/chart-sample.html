@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>design-html-图表样板-参考实现</title>
+<!--
+  design-html 数据图与对比表的参考实现。双击打开即可看到效果。
+  用法:按需复制对应区块的 CSS 和 HTML,换成自己的数据。数值怎么换算见每个区块的注释。
+  区块:① 数字卡  ② 柱状图(HTML/CSS)  ③ 折线图(SVG 画线 + HTML 标签)  ④ 对比表
+-->
+<style>
+:root {
+  --bg: #fbf9f5; --text: #1b1b1b; --text-2: #6b6964; --text-3: #73706a;
+  --grid: #e8e6e0; --axis: #9c9990; --rule: #1b1b1b;
+  --hl: #dfe6e8; --hl-strong: #c4d2df; --focus: #6a9bcc;
+  /* 系列色:主色画图形,-lt 是同家族旧版/配角,-ink 用于彩色文字 */
+  --blue: #184ea4;   --blue-lt: #89a9dc;   --blue-ink: #184ea4;
+  --green: #109d7b;  --green-lt: #7db6a1;  --green-ink: #0c7b60;
+  --orange: #c67625; --orange-lt: #cb9d78; --orange-ink: #a55f16;
+  --violet: #a378c5; --violet-lt: #b49dc8; --violet-ink: #895faa;
+  --gray: #9c9990;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font-family: -apple-system, "PingFang SC", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  font-size: 16px; line-height: 1.6; }
+main { max-width: 880px; margin: 0 auto; padding: 40px 16px 80px; }
+
+/* ---------- 图的外壳:结论标题 + 灰色口径 ---------- */
+.chart { margin: 48px 0; }
+.chart-head h3 { font-size: 22px; font-weight: 500; line-height: 1.35; margin: 0 0 6px; }
+.chart-head p { color: var(--text-2); font-size: 15px; margin: 0; }
+
+/* ---------- ① 数字卡 ---------- */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 24px 32px; margin-top: 24px; }
+.stat { border-top: 1px solid var(--axis); padding-top: 12px; }
+.stat .k { font-size: 15px; color: var(--text-2); }
+.stat .v { font-size: 40px; font-weight: 500; line-height: 1.2; margin: 4px 0; }
+.stat .d { font-size: 14px; color: var(--text-2); }
+
+/* ---------- ② 柱状图 ---------- */
+.bars { display: flex; gap: 32px; margin-top: 28px; }
+.bar-group { flex: var(--n) 1 0; min-width: 0; }            /* --n = 组内柱子数,组宽按柱数分 */
+.bar-group:first-child { flex-basis: 40px; }                 /* 给 y 刻度留位 */
+.group-head { font-size: 15px; line-height: 1.4; padding-bottom: 10px; border-bottom: 1px solid var(--axis); }
+.group-head span { display: block; color: var(--text-2); }
+.plot { position: relative; height: 220px; margin-top: 36px; border-bottom: 1px solid var(--axis); }
+.plot .gl { position: absolute; left: 0; right: 0; border-top: 1px solid var(--grid); }
+.plot .tick { position: absolute; left: 0; transform: translateY(50%); font-size: 13px; color: var(--text-3); }
+.cols { position: absolute; inset: 0; display: flex; }
+.plot.ticked .cols { left: 40px; }                            /* 只有第一组带刻度,柱子让出 40px */
+.col { flex: 1; position: relative; }
+.bar { position: absolute; bottom: 0; left: 50%; width: min(56px, 70%); transform: translateX(-50%);
+  height: calc(var(--v) * 1%); background: var(--c); min-height: 3px; }   /* min-height:值为 0 也留一条贴底短线 */
+.val { position: absolute; left: 0; right: 0; text-align: center; bottom: calc(var(--top, var(--v)) * 1% + 6px);
+  font-size: 20px; font-weight: 500; color: var(--ink); line-height: 1.2; }
+.ci { position: absolute; left: 50%; width: 1.5px; margin-left: -0.75px; background: #3d3b37;
+  bottom: calc(var(--lo) * 1%); height: calc((var(--hi) - var(--lo)) * 1%); }
+.ci::before, .ci::after { content: ""; position: absolute; left: -6px; width: 13px; height: 1.5px; background: #3d3b37; }
+.ci::before { top: 0; } .ci::after { bottom: 0; }
+.na { position: absolute; bottom: 6px; left: 0; right: 0; text-align: center; color: var(--axis); }
+.labels { display: flex; margin-top: 10px; }
+.labels div { flex: 1; text-align: center; font-size: 15px; line-height: 1.35; padding: 0 2px; }
+.labels span { display: block; color: var(--text-2); font-size: 13px; margin-top: 4px; }
+
+/* ---------- ③ 折线图 ---------- */
+.line-wrap { display: grid; grid-template-columns: 1fr minmax(120px, 34%); gap: 12px; margin-top: 24px; }
+.line-plot { position: relative; }
+.line-plot svg { display: block; width: 100%; height: auto; overflow: visible; }
+.line-plot .y { position: absolute; left: 0; transform: translateY(-50%); font-size: 13px; color: var(--text-3); }
+.line-x { position: relative; height: 22px; font-size: 13px; color: var(--text-3); margin-top: 6px; }
+.line-x span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.line-x span.last { left: auto; right: 0; transform: none; }  /* 末端刻度右对齐,防止手机上被截 */
+.ends { position: relative; }
+.ends div { position: absolute; left: 0; transform: translateY(-50%); white-space: nowrap; font-size: 15px; line-height: 1.2; }
+.ends b { font-weight: 500; display: inline-block; min-width: 3.4em; text-align: right; margin-right: 8px; }
+.axis-title { font-size: 13px; color: var(--text-2); margin: 2px 0 0 9%; }
+
+/* ---------- ④ 对比表 ---------- */
+.tbl-wrap { overflow-x: auto; margin-top: 24px; }
+table.cmp { border-collapse: collapse; min-width: 600px; width: 100%; font-size: 15px; }
+.cmp th, .cmp td { border: 1px solid var(--rule); padding: 12px 14px; text-align: left; vertical-align: top; }
+.cmp thead th { font-weight: 600; }
+.cmp tbody th { font-weight: 600; position: sticky; left: 0; background: var(--bg); z-index: 1; }  /* 横滑时行头不动 */
+.cmp .sub { display: block; font-weight: 400; color: var(--text-2); font-size: 13px; margin-top: 2px; }
+.cmp .best { background: var(--hl); font-weight: 600; }
+.cmp .pick { border-left: 3px solid var(--focus); border-right: 3px solid var(--focus); }
+.cmp thead .pick { border-top: 3px solid var(--focus); }
+.cmp tbody tr:last-child .pick { border-bottom: 3px solid var(--focus); }
+.cmp .pick.best { background: var(--hl-strong); }
+
+@media (max-width: 560px) {
+  .bars { gap: 16px; }
+  .val { font-size: 16px; }
+  .labels div { font-size: 13px; } .labels span { font-size: 12px; }
+  .line-wrap { grid-template-columns: 1fr; }
+  .ends { order: 5; margin-top: 12px; }                         /* 手机上右侧标签改成图下的一列 */
+  .ends div { position: static; transform: none; margin: 4px 0; }
+  .stat .v { font-size: 32px; }
+}
+</style>
+</head>
+<body>
+<main>
+<h1>检索方案-选型-设计说明</h1>
+
+<!-- ① 数字卡:要说的是一两个数时,用它代替图 -->
+<figure class="chart" role="group" aria-labelledby="c0t">
+  <figcaption class="chart-head">
+    <h3 id="c0t">换成混合检索 v2，召回率翻了将近一倍</h3>
+    <p>500 条真实用户问题；成本含向量库和 GPU 推理</p>
+  </figcaption>
+  <div class="stats">
+    <div class="stat"><div class="k">召回率@10</div><div class="v">79%</div><div class="d">线上 BM25 为 41%</div></div>
+    <div class="stat"><div class="k">P95 延迟</div><div class="v">175ms</div><div class="d">预算 300ms</div></div>
+    <div class="stat"><div class="k">月成本增加</div><div class="v">¥4,300</div><div class="d">¥800 → ¥5,100</div></div>
+  </div>
+</figure>
+
+<!-- ② 柱状图
+  纵轴 0–100:--v = 数值占纵轴满量程的百分比(满量程不是 100 时,--v = 值 / 满量程 × 100)。
+  误差线:--lo / --hi 同样换算;数值标签的 --top 取 --hi,让标签落在误差线上方。
+  --c 柱色,--ink 数值文字色:主角用主色,同家族旧版用 -lt 柱色 + 同家族 -ink 文字,对照组用 --gray + --text-2。
+  无数据:不画柱,画锁图标,类目标签第二行写原因。值为 0:照常画,min-height 会留一条贴底短线。 -->
+<figure class="chart" role="group" aria-labelledby="c1t">
+  <figcaption class="chart-head">
+    <h3 id="c1t">混合检索 v2 把召回率从 41% 提到 79%</h3>
+    <p>召回率@10，500 条真实用户问题；细线为 95% 置信区间</p>
+  </figcaption>
+  <div class="bars">
+    <div class="bar-group" style="--n:1">
+      <div class="group-head">线上方案<span>BM25 关键词检索</span></div>
+      <div class="plot ticked">
+        <div class="gl" style="bottom:25%"></div><div class="gl" style="bottom:50%"></div><div class="gl" style="bottom:75%"></div>
+        <div class="tick" style="bottom:25%">25%</div><div class="tick" style="bottom:50%">50%</div><div class="tick" style="bottom:75%">75%</div>
+        <div class="cols">
+          <div class="col" style="--v:41;--c:var(--gray);--ink:var(--text-2)">
+            <div class="bar"></div><div class="ci" style="--lo:37;--hi:45"></div><div class="val" style="--top:45">41%</div>
+          </div>
+        </div>
+      </div>
+      <div class="labels" style="padding-left:40px"><div>BM25 v1<span>2026-03</span></div></div>
+    </div>
+    <div class="bar-group" style="--n:4">
+      <div class="group-head">候选方案<span>2026 年 6–8 月评测</span></div>
+      <div class="plot">
+        <div class="gl" style="bottom:25%"></div><div class="gl" style="bottom:50%"></div><div class="gl" style="bottom:75%"></div>
+        <div class="cols">
+          <div class="col" style="--v:58;--c:var(--green);--ink:var(--green-ink)">
+            <div class="bar"></div><div class="ci" style="--lo:54;--hi:62"></div><div class="val" style="--top:62">58%</div>
+          </div>
+          <div class="col" style="--v:66;--c:var(--blue-lt);--ink:var(--blue-ink)">
+            <div class="bar"></div><div class="ci" style="--lo:62;--hi:70"></div><div class="val" style="--top:70">66%</div>
+          </div>
+          <div class="col" style="--v:79;--c:var(--blue);--ink:var(--blue-ink)">
+            <div class="bar"></div><div class="ci" style="--lo:75;--hi:83"></div><div class="val" style="--top:83">79%</div>
+          </div>
+          <div class="col">
+            <div class="na" role="img" aria-label="无数据">
+              <svg width="18" height="22" viewBox="0 0 18 22" aria-hidden="true"><path d="M4 10V7a5 5 0 0 1 10 0v3" fill="none" stroke="currentColor" stroke-width="2"/><rect x="1" y="10" width="16" height="11" rx="2" fill="currentColor"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="labels">
+        <div>纯向量<span>2026-06</span></div>
+        <div>混合 v1<span>2026-07</span></div>
+        <div>混合 v2<span>2026-08</span></div>
+        <div>知识图谱<span>图谱仅覆盖 12%，未评测</span></div>
+      </div>
+    </div>
+  </div>
+</figure>
+
+<!-- ③ 折线图
+  SVG 只画网格、线和端点;所有文字(刻度、线尾标签)用 HTML,手机上字号不缩。
+  坐标:viewBox 0 0 400 240,绘图区 x 从 36 到 400。y = 240 - 值 × (240 / 纵轴满量程)。
+  HTML 刻度位置:y 刻度 top = (1 - 值/满量程) × 100%;x 刻度 left = x / 400 × 100%,最后一个用 class="last"。
+  线尾标签:按终值从高到低排,top 取端点 y / 240 × 100%;和上一个标签的间距不足 8% 时,顺延到上一个 + 8%。 -->
+<figure class="chart" role="group" aria-labelledby="c2t">
+  <figcaption class="chart-head">
+    <h3 id="c2t">混合 v2 多出的延迟来自 reranker，千万级文档下仍在 300ms 预算内</h3>
+    <p>P95 延迟（毫秒），文档数为对数刻度</p>
+  </figcaption>
+  <div class="line-wrap">
+    <div class="line-plot">
+      <svg viewBox="0 0 400 240" role="img" aria-label="四个方案的 P95 延迟随文档数增长，混合 v2 从 140ms 升到 230ms，其余均在 110ms 以内">
+        <g stroke="#e8e6e0" stroke-width="1">
+          <line x1="36" x2="400" y1="160" y2="160"/><line x1="36" x2="400" y1="80" y2="80"/><line x1="36" x2="400" y1="0" y2="0"/>
+        </g>
+        <line x1="36" x2="400" y1="240" y2="240" stroke="#9c9990" stroke-width="1"/>
+        <g fill="none" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+          <polyline stroke="#9c9990" points="36,230.4 157,225.6 279,212 400,176"/>
+          <polyline stroke="#109d7b" points="36,224 157,217.6 279,204 400,184"/>
+          <polyline stroke="#89a9dc" points="36,220 157,212 279,192 400,152"/>
+          <polyline stroke="#184ea4" points="36,128 157,120 279,100 400,56"/>
+        </g>
+        <g stroke="#fbf9f5" stroke-width="2">
+          <circle cx="400" cy="176" r="4.5" fill="#9c9990"/><circle cx="400" cy="184" r="4.5" fill="#109d7b"/>
+          <circle cx="400" cy="152" r="4.5" fill="#89a9dc"/><circle cx="400" cy="56" r="4.5" fill="#184ea4"/>
+        </g>
+      </svg>
+      <div class="y" style="top:0%">300</div><div class="y" style="top:33.3%">200</div><div class="y" style="top:66.7%">100</div>
+    </div>
+    <div class="ends">
+      <div style="top:23.3%;color:var(--blue-ink)"><b>230</b>混合 v2</div>
+      <div style="top:63.3%;color:var(--blue-ink)"><b>110</b>混合 v1</div>
+      <div style="top:73.3%;color:var(--text-2)"><b>80</b>BM25 v1</div>
+      <div style="top:81.3%;color:var(--green-ink)"><b>70</b>纯向量</div>
+    </div>
+    <div class="line-x"><span style="left:9%">1万</span><span style="left:39.25%">10万</span><span style="left:69.75%">100万</span><span class="last">1000万</span></div>
+    <div></div>
+    <div class="axis-title">文档数（对数刻度）</div>
+  </div>
+</figure>
+
+<!-- ④ 对比表
+  推荐列放在第一个数据列并加 class="pick";每行最优值加 class="best"。
+  格内第二行灰字(.sub)写条件或备注;缺数据写"—"。 -->
+<figure class="chart" role="group" aria-labelledby="c3t">
+  <figcaption class="chart-head">
+    <h3 id="c3t">混合 v2 在 6 项指标里拿下 3 项最优，代价是延迟和成本</h3>
+    <p>底色为每行最优；蓝框为推荐方案</p>
+  </figcaption>
+  <div class="tbl-wrap">
+    <table class="cmp">
+      <thead><tr><th></th><th class="pick">混合 v2<span class="sub">推荐</span></th><th>混合 v1</th><th>纯向量</th><th>BM25 v1<span class="sub">线上</span></th></tr></thead>
+      <tbody>
+        <tr><th>召回率@10<span class="sub">500 条真实问题</span></th><td class="pick best">79%</td><td>66%</td><td>58%</td><td>41%</td></tr>
+        <tr><th>答案准确率<span class="sub">人工评 200 条</span></th><td class="pick best">81%</td><td>70%</td><td>63%</td><td>52%</td></tr>
+        <tr><th>口语化问题召回</th><td class="pick best">77%</td><td>64%</td><td>61%</td><td>22%</td></tr>
+        <tr><th>P95 延迟<span class="sub">100 万文档</span></th><td class="pick">175ms<span class="sub">含 reranker</span></td><td>60ms</td><td>45ms</td><td class="best">35ms</td></tr>
+        <tr><th>月成本</th><td class="pick">¥5,100</td><td>¥3,600</td><td>¥3,200</td><td class="best">¥800</td></tr>
+        <tr><th>运维复杂度</th><td class="pick">中<span class="sub">多一个 reranker 服务</span></td><td>中</td><td>中</td><td class="best">低</td></tr>
+      </tbody>
+    </table>
+  </div>
+</figure>
+</main>
+</body>
+</html>
