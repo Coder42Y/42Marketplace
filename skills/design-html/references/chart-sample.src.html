@@ -1,0 +1,58 @@
+<h1>检索方案-选型-设计说明</h1>
+<p class="meta">样板源文件:用 scripts/build.py 构建成 chart-sample.html</p>
+
+<script type="application/json" data-chart="entities">
+{"混合 v2": "blue", "混合 v1": "blue-lt", "纯向量": "green", "BM25 v1": "gray"}
+</script>
+
+<script type="application/json" data-chart="stat">
+{"title": "换成混合检索 v2，召回率翻了将近一倍",
+ "note": "500 条真实用户问题；成本含向量库和 GPU 推理",
+ "items": [
+   {"label": "召回率@10", "value": "79%", "sub": "线上 BM25 为 41%"},
+   {"label": "P95 延迟", "value": "175ms", "sub": "预算 300ms"},
+   {"label": "月成本增加", "value": "¥4,300", "sub": "¥800 → ¥5,100"}]}
+</script>
+
+<script type="application/json" data-chart="bar">
+{"title": "混合检索 v2 把召回率从 41% 提到 79%",
+ "note": "召回率@10，500 条真实用户问题；细线为 95% 置信区间",
+ "unit": "%", "max": 100,
+ "groups": [
+   {"name": "线上方案", "sub": "BM25 关键词检索",
+    "items": [{"name": "BM25 v1", "sub": "2026-03", "value": 41, "ci": [37, 45]}]},
+   {"name": "候选方案", "sub": "2026 年 6–8 月评测",
+    "items": [
+      {"name": "纯向量", "sub": "2026-06", "value": 58, "ci": [54, 62]},
+      {"name": "混合 v1", "sub": "2026-07", "value": 66, "ci": [62, 70]},
+      {"name": "混合 v2", "sub": "2026-08", "value": 79, "ci": [75, 83]},
+      {"name": "知识图谱", "sub": "图谱仅覆盖 12%，未评测", "value": null}]}]}
+</script>
+
+<script type="application/json" data-chart="line">
+{"title": "混合 v2 多出的延迟来自 reranker，千万级文档下仍在 300ms 预算内",
+ "note": "P95 延迟（毫秒），文档数为对数刻度；虚线为产品上限",
+ "x": {"labels": ["1万", "10万", "100万", "1000万"], "title": "文档数（对数刻度）"},
+ "y": {"max": 300},
+ "threshold": {"value": 300, "label": "产品上限 300ms"},
+ "series": [
+   {"name": "混合 v2", "values": [140, 150, 175, 230]},
+   {"name": "混合 v1", "values": [25, 35, 60, 110]},
+   {"name": "BM25 v1", "values": [12, 18, 35, 80]},
+   {"name": "纯向量", "values": [20, 28, 45, 70]}]}
+</script>
+
+<script type="application/json" data-chart="table">
+{"title": "混合 v2 在 6 项指标里拿下 3 项最优，代价是延迟和成本",
+ "note": "底色为每行最优；蓝框为推荐方案",
+ "columns": [
+   {"name": "BM25 v1", "sub": "线上"}, {"name": "纯向量"}, {"name": "混合 v1"},
+   {"name": "混合 v2", "sub": "推荐", "pick": true}],
+ "rows": [
+   {"name": "召回率@10", "sub": "500 条真实问题", "better": "high", "cells": ["41%", "58%", "66%", "79%"]},
+   {"name": "答案准确率", "sub": "人工评 200 条", "better": "high", "cells": ["52%", "63%", "70%", "81%"]},
+   {"name": "口语化问题召回", "better": "high", "cells": ["22%", "61%", "64%", "77%"]},
+   {"name": "P95 延迟", "sub": "100 万文档", "better": "low", "cells": ["35ms", "45ms", "60ms", {"v": "175ms", "sub": "含 reranker"}]},
+   {"name": "月成本", "better": "low", "cells": ["¥800", "¥3,200", "¥3,600", "¥5,100"]},
+   {"name": "运维复杂度", "best": 0, "cells": ["低", "中", "中", {"v": "中", "sub": "多一个 reranker 服务"}]}]}
+</script>

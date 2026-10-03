@@ -1,0 +1,186 @@
+/* design-html 基础样式。由 scripts/build.py 原样内联到 design.html,不要手改输出里的这一段。 */
+:root {
+  --bg: #fbf9f5;          /* 暖白底,全页统一 */
+  --panel: #ffffff;       /* 示意图节点、正文里的卡片 */
+  --panel-2: #f3f1ec;     /* 引用块、泳道 */
+  --border: #dcd9d0;      /* 1px 细线,替代阴影 */
+  --text: #1b1b1b;
+  --text-2: #6b6964;      /* 次要文字、口径、图注 */
+  --text-3: #73706a;      /* 坐标刻度 */
+  --accent: #184ea4;      /* 唯一强调色 */
+  --accent-soft: #dfe6e8;
+  --ok: #2f7a4a;  --warn: #9a6212;  --bad: #b3362e;
+
+  /* 数据图与对比表(已做色弱和对比度校验,不要改) */
+  --grid: #e8e6e0;  --axis: #9c9990;  --rule: #1b1b1b;
+  --hl: #dfe6e8;  --hl-strong: #c4d2df;  --focus: #6a9bcc;
+  --blue: #184ea4;    --blue-lt: #89a9dc;    --blue-ink: #184ea4;
+  --green: #109d7b;   --green-lt: #7db6a1;   --green-ink: #0c7b60;
+  --orange: #c67625;  --orange-lt: #cb9d78;  --orange-ink: #a55f16;
+  --violet: #a378c5;  --violet-lt: #b49dc8;  --violet-ink: #895faa;
+  --gray: #9c9990;    --gray-lt: #cbc8c0;
+  --red-1: #c8787b;  --red-2: #c05b61;  --red-3: #b23e4a;  --red-4: #9c2938;  --red-5: #821829;
+  --red-ink: #9c2938;
+
+  /* 示意图数据流箭头(三色两两在色弱和灰度下都能区分) */
+  --flow-main: #142f4b;   /* 主交互 / 发起动作 */
+  --flow-out: #cc3143;    /* 输出 / 结论 */
+  --flow-in: #6f35a2;     /* 输入 / 素材流入 */
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font-family: -apple-system, "PingFang SC", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  font-size: 16px; line-height: 1.7; }
+main { max-width: 880px; margin: 0 auto; padding: 48px 16px 96px; }
+
+/* ---------- 正文 ---------- */
+h1 { font-size: 30px; font-weight: 600; line-height: 1.3; margin: 0 0 8px; }
+h2 { font-size: 22px; font-weight: 600; line-height: 1.4; margin: 56px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+h3 { font-size: 18px; font-weight: 600; line-height: 1.4; margin: 28px 0 8px; }
+p { margin: 0 0 12px; }
+ul, ol { margin: 0 0 12px; padding-left: 1.4em; }
+li { margin: 4px 0; }
+a { color: var(--accent); }
+strong { font-weight: 600; }
+.meta { color: var(--text-2); font-size: 14px; margin-bottom: 24px; }
+.lead { font-size: 17px; margin: 16px 0 24px; }
+.muted { color: var(--text-2); }
+blockquote, .callout { margin: 16px 0; padding: 12px 16px; background: var(--panel-2); border-left: 3px solid var(--border); }
+.callout.key { border-left-color: var(--accent); }
+
+/* 卡片网格:窄屏自动单列 */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin: 16px 0; }
+.card { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 16px 18px; }
+.card h4 { margin: 0 0 6px; font-size: 16px; font-weight: 600; }
+.card p:last-child { margin-bottom: 0; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+
+/* 示意图 */
+figure { margin: 24px 0; }
+figure.diagram > svg, figure.diagram > .scroll-x > svg { display: block; width: 100%; height: auto; }
+.only-mobile { display: none !important; }
+figure.diagram figcaption { color: var(--text-2); font-size: 14px; margin-top: 10px; }
+.scroll-x { overflow-x: auto; }
+
+/* 普通表格 */
+.tbl-wrap { overflow-x: auto; margin: 16px 0; }
+table.tbl { border-collapse: collapse; width: 100%; font-size: 15px; }
+.tbl th, .tbl td { border-bottom: 1px solid var(--border); padding: 10px 12px; text-align: left; vertical-align: top; }
+.tbl th { font-weight: 600; }
+.tbl tbody tr:hover { background: var(--panel-2); }
+
+/* ---------- 数据图外壳:结论标题 + 灰色口径 ---------- */
+.c-chart { margin: 48px 0; }
+.c-head h3 { font-size: 21px; font-weight: 500; line-height: 1.4; margin: 0 0 6px; }
+.c-head p { color: var(--text-2); font-size: 15px; margin: 0; }
+
+/* 数字卡 */
+.c-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 24px 32px; margin-top: 24px; }
+.c-stat { border-top: 1px solid var(--axis); padding-top: 12px; }
+.c-stat .k { font-size: 15px; color: var(--text-2); }
+.c-stat .v { font-size: 40px; font-weight: 500; line-height: 1.2; margin: 4px 0; }
+.c-stat .d { font-size: 14px; color: var(--text-2); }
+
+/* 柱状图:按组分列,组名 / 绘图区 / 类目标签三行对齐 */
+.c-bars { display: grid; column-gap: 32px; margin-top: 28px; }
+.c-ghead { font-size: 15px; line-height: 1.4; padding-bottom: 10px; border-bottom: 1px solid var(--axis); align-self: end; }
+.c-ghead span { display: block; color: var(--text-2); }
+.c-plot { position: relative; height: 220px; margin-top: 40px; border-bottom: 1px solid var(--axis); }
+.c-gl { position: absolute; left: 0; right: 0; border-top: 1px solid var(--grid); }
+.c-tick { position: absolute; left: 0; transform: translateY(50%); font-size: 13px; color: var(--text-3); background: var(--bg); padding-right: 6px; line-height: 1.3; }
+.c-cols { position: absolute; inset: 0; display: flex; }
+.c-plot.ticked .c-cols { left: 40px; }
+.c-col { flex: 1; position: relative; min-width: 0; }
+.c-bar { position: absolute; bottom: 0; left: 50%; width: min(56px, 70%); transform: translateX(-50%);
+  height: calc(var(--v) * 1%); background: var(--c); min-height: 3px; }
+.c-val { position: absolute; left: -8px; right: -8px; text-align: center; bottom: calc(var(--top, var(--v)) * 1% + 6px);
+  font-size: 20px; font-weight: 500; color: var(--ink); line-height: 1.2; white-space: nowrap; }
+.c-val span { background: var(--bg); padding: 0 4px; }  /* 底色挡住穿过数值的网格线 */
+.c-ci { position: absolute; left: 50%; width: 1.5px; margin-left: -0.75px; background: #3d3b37;
+  bottom: calc(var(--lo) * 1%); height: calc((var(--hi) - var(--lo)) * 1%); }
+.c-ci::before, .c-ci::after { content: ""; position: absolute; left: -6px; width: 13px; height: 1.5px; background: #3d3b37; }
+.c-ci::before { top: 0; } .c-ci::after { bottom: 0; }
+.c-na { position: absolute; bottom: 6px; left: 0; right: 0; text-align: center; color: var(--axis); }
+.c-labels { display: flex; margin-top: 10px; }
+.c-labels.ticked { padding-left: 40px; }
+.c-labels div { flex: 1; min-width: 0; text-align: center; font-size: 15px; line-height: 1.35; padding: 0 2px; overflow-wrap: break-word; }
+.c-labels span { display: block; color: var(--text-2); font-size: 13px; margin-top: 4px; }
+
+/* 折线图:SVG 只画线,文字全用 HTML */
+.c-line { display: grid; grid-template-columns: 1fr minmax(120px, 30%); column-gap: 12px; margin-top: 24px; }
+.c-lplot { position: relative; margin-top: 12px; }
+.c-lplot svg { display: block; width: 100%; height: auto; overflow: visible; }
+.c-y { position: absolute; left: 0; transform: translateY(-50%); font-size: 13px; color: var(--text-3); background: var(--bg); padding-right: 6px; line-height: 1.3; }
+.c-thr { position: absolute; left: calc(9% + 4px); transform: translateY(-100%); font-size: 13px; color: var(--text-2); padding-bottom: 2px; }
+.c-x { position: relative; height: 22px; font-size: 13px; color: var(--text-3); margin-top: 6px; }
+.c-x span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.c-x span.last { left: auto; right: 0; transform: none; }
+.c-ends { position: relative; margin-top: 12px; }
+.c-ends div { position: absolute; left: 0; transform: translateY(-50%); white-space: nowrap; font-size: 15px; line-height: 1.2; }
+.c-ends b { font-weight: 500; display: inline-block; min-width: 3.2em; text-align: right; margin-right: 8px; }
+.c-ends .thr { color: var(--text-2); }
+.c-ends .thr i { display: inline-block; width: 22px; border-top: 1px dashed var(--axis); vertical-align: middle; }
+.c-axis { font-size: 13px; color: var(--text-2); margin: 2px 0 0 9%; }
+
+/* 横向柱:柱子多或手机上用;成对柱:几个实体在同一组类目上对比 */
+.c-h4m { display: none; }
+.c-hbars { margin-top: 24px; }
+.c-hgroup { font-size: 15px; line-height: 1.4; padding: 16px 0 8px; border-bottom: 1px solid var(--axis); margin-bottom: 6px; }
+.c-hgroup span { color: var(--text-2); margin-left: 8px; }
+.c-hrow { display: grid; grid-template-columns: minmax(96px, 26%) 1fr; column-gap: 16px; align-items: center; padding: 7px 0; }
+.c-hlab { font-size: 15px; line-height: 1.35; text-align: right; }
+.c-hlab span { display: block; color: var(--text-2); font-size: 13px; }
+.c-htrack { position: relative; height: 22px; margin-right: 64px; border-left: 1px solid var(--axis); }
+.c-htrack.thin { height: 14px; margin-top: 3px; margin-bottom: 3px; }
+.c-hbar { position: absolute; left: 0; top: 0; bottom: 0; min-width: 3px; }
+.c-hci { position: absolute; top: 50%; height: 1.5px; margin-top: -0.75px; background: #3d3b37; }
+.c-hci::before, .c-hci::after { content: ""; position: absolute; top: -6px; width: 1.5px; height: 13px; background: #3d3b37; }
+.c-hci::before { left: 0; } .c-hci::after { right: 0; }
+.c-hval { position: absolute; top: 50%; transform: translateY(-50%); font-size: 15px; font-weight: 500; white-space: nowrap; }
+.c-htrack.thin .c-hval { font-size: 13px; }
+.c-hna { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 6px; color: var(--axis); }
+.c-hna svg { width: 13px; height: 16px; }
+.c-hna small { font-size: 13px; color: var(--text-2); white-space: nowrap; }
+.c-hkey { display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: 20px; font-size: 14px; }
+.c-hkey i { display: inline-block; width: 12px; height: 12px; margin-right: 6px; vertical-align: -1px; }
+.c-hkey em { font-style: normal; color: var(--text-2); margin-left: 4px; }
+.c-hint { display: none; }
+
+/* 对比表 */
+.c-tbl { overflow-x: auto; margin-top: 24px; }
+table.c-cmp { border-collapse: collapse; min-width: 600px; width: 100%; font-size: 15px; }
+.c-cmp th, .c-cmp td { border: 1px solid var(--rule); padding: 12px 14px; text-align: left; vertical-align: top; }
+.c-cmp thead th { font-weight: 600; }
+.c-cmp tbody th { font-weight: 600; position: sticky; left: 0; background: var(--bg); z-index: 1; }
+.c-cmp .sub { display: block; font-weight: 400; color: var(--text-2); font-size: 13px; margin-top: 2px; }
+.c-cmp .best { background: var(--hl); font-weight: 600; }
+.c-cmp .pick { border-left: 3px solid var(--focus); border-right: 3px solid var(--focus); }
+.c-cmp thead .pick { border-top: 3px solid var(--focus); }
+.c-cmp tbody tr:last-child .pick { border-bottom: 3px solid var(--focus); }
+.c-cmp .pick.best { background: var(--hl-strong); }
+.c-cmp td.none { color: var(--text-2); }
+
+@media (max-width: 560px) {
+  h1 { font-size: 24px; }
+  h2 { font-size: 20px; }
+  .two-col { grid-template-columns: 1fr; }
+  .c-bars { column-gap: 16px; }
+  .c-val { font-size: 16px; }
+  .c-labels div { font-size: 13px; } .c-labels span { font-size: 12px; }
+  .c-line { grid-template-columns: 1fr; }
+  .c-ends { order: 5; height: auto !important; }
+  .c-ends div { position: static; transform: none; margin: 4px 0; }
+  .c-stat .v { font-size: 32px; }
+  .c-stats { gap: 20px 16px; }
+  .c-x span.mh { display: none; }
+  .c-v2h { display: none; }
+  .c-h4m { display: block; }
+  .c-hrow { grid-template-columns: 1fr; row-gap: 4px; }
+  .c-hlab { text-align: left; }
+  .c-htrack { margin-right: 52px; }
+  .c-hint { display: block; font-size: 13px; color: var(--text-2); margin: 16px 0 -16px; }
+  .only-mobile { display: block !important; }
+  .only-desktop { display: none !important; }
+}
