@@ -8,6 +8,10 @@
 
 除 `entities` 外,每种图都必须有 `title`(结论句)和 `note`(灰色口径)。
 
+- 数值字段(`value`、`values`、`ci`、`max`、`ticks`、`threshold.value`)必须是数字,不能是带单位的字符串;暂不支持负值
+- 给了 `max` 时,所有数值(含误差线上限、阈值)都不能超过它,否则构建失败
+- JSON 字符串里如果出现 `</script>`,要写成 `<\/script>`,否则数据块会被提前截断
+
 ## entities:实体配色,全文写一次
 
 ```json
@@ -67,7 +71,7 @@
 | 字段 | 说明 |
 |---|---|
 | `x.labels` | x 轴标签,默认等距排列;标签多时脚本自动隔几个显示一个 |
-| `x.values` + `x.scale` | 需要按数值排布时用,`scale` 取 `"linear"` 或 `"log"` |
+| `x.values` + `x.scale` | 需要按数值排布时用,`scale` 取 `"linear"` 或 `"log"`。`x.values` 必须严格递增,对数刻度下都要大于 0 |
 | `x.title` | 轴标题(可选),如「文档数(对数刻度)」 |
 | `y.max` / `y.ticks` / `y.unit` / `y.prefix` | 同 bar |
 | `series[]` | `name`、`values`(和 `x.labels` 等长,没有数据的月份写 `null`)、`color`(可选) |
@@ -82,9 +86,11 @@
 | `columns[]` | `name`、`sub`(身份,如「推荐」「线上」)、`pick: true` 标推荐列(只能一个,脚本自动移到第一个数据列) |
 | `rows[]` | `name`、`sub`(口径)、`cells`(和列数相等)、`better` 或 `best` |
 | `cells[]` | 字符串,或 `{"v": "175ms", "sub": "含 reranker"}`;缺数据写 `"—"` |
-| `better` | `"high"` / `"low"`:脚本从格子里解析数字,标出每行最优 |
+| `better` | `"high"` / `"low"`:脚本从格子里解析数字,标出每行最优。同一行单位不一致(如 `1.2s` 和 `900ms`)时不标并警告,统一单位或改用 `best` |
 | `best` | 列序号(按 `columns` 原顺序,从 0 开始),或序号数组。低/中/高这类解析不了数字的行用它 |
 
 ## 报错
 
-构建失败时脚本会指出第几个图表块、哪个字段有问题,按提示改 `design.src.html` 再跑。
+构建失败时脚本会指出第几个图表块、哪个字段有问题,按提示改 `design.src.html` 再跑。每一行对比表都要写 `better` 或 `best`,漏写会警告。
+
+改了 `scripts/build.py` 之后跑一遍测试:`python3 -m unittest discover -s scripts -p 'test_*.py'`。
