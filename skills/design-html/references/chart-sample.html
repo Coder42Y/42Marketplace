@@ -120,7 +120,6 @@ table.tbl { border-collapse: collapse; width: 100%; font-size: 15px; }
 .c-lplot { position: relative; margin-top: 12px; }
 .c-lplot svg { display: block; width: 100%; height: auto; overflow: visible; }
 .c-y { position: absolute; left: 0; transform: translateY(-50%); font-size: 13px; color: var(--text-3); background: var(--bg); padding-right: 6px; line-height: 1.3; }
-.c-thr { position: absolute; left: calc(9% + 4px); transform: translateY(-100%); font-size: 13px; color: var(--text-2); padding-bottom: 2px; }
 .c-x { position: relative; height: 22px; font-size: 13px; color: var(--text-3); margin-top: 6px; }
 .c-x span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
 .c-x span.last { left: auto; right: 0; transform: none; }
@@ -176,9 +175,9 @@ table.c-cmp { border-collapse: collapse; min-width: 600px; width: 100%; font-siz
   .c-bars { column-gap: 16px; }
   .c-val { font-size: 16px; }
   .c-labels div { font-size: 13px; } .c-labels span { font-size: 12px; }
-  .c-line { grid-template-columns: 1fr; }
+  .c-line { grid-template-columns: minmax(0, 1fr); }
   .c-ends { order: 5; height: auto !important; }
-  .c-ends div { position: static; transform: none; margin: 4px 0; }
+  .c-ends div { position: static; transform: none; margin: 4px 0; white-space: normal; }
   .c-stat .v { font-size: 32px; }
   .c-stats { gap: 20px 16px; }
   .c-x span.mh { display: none; }
@@ -196,7 +195,7 @@ table.c-cmp { border-collapse: collapse; min-width: 600px; width: 100%; font-siz
 <body>
 <main>
 <h1>检索方案-选型-设计说明</h1>
-<p class="meta">样板源文件:用 scripts/build.py 构建成 chart-sample.html</p>
+<p class="meta">样板源文件：用 <code>python3 scripts/build.py references/chart-sample.src.html -o references/chart-sample.html</code> 构建</p>
 
 
 

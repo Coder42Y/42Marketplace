@@ -4,11 +4,11 @@
 
 | | |
 |:---|:---|
-| **版本** | `v0.5.0` |
+| **版本** | `v0.5.1` |
 | **状态** | `stable` |
 | **兼容** | `Claude Code`, `Codex` |
 | **License** | `MIT` |
-| **最近更新** | `2026-10-02` |
+| **最近更新** | `2026-10-04` |
 
 ---
 
@@ -65,7 +65,7 @@ ln -s $(pwd)/skills/design-html ~/.claude/skills/design-html
 
 ## 依赖
 
-- **python3**(3.7+,只用标准库):运行 `scripts/build.py`
+- **python3**(3.7+,只用标准库):运行 `scripts/build.py`;改脚本后用 `python3 -m unittest discover -s scripts -p 'test_*.py'` 跑测试
 - **Google Chrome / Chromium**(可选):`--shot` 截图自检用;没有就跳过截图
 
 生成的 `design.html` 所有 CSS/SVG 内联,双击可打开,不依赖任何东西。

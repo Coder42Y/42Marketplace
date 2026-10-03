@@ -7,6 +7,7 @@
 design.src.html 只写 <main> 里的内容。图表写成
   <script type="application/json" data-chart="entities|stat|bar|line|table">{...}</script>
 格式见 references/chart-spec.md。只用 Python 3 标准库。
+退出码:0 成功;1 构建失败;2 构建成功但手机上页面横向溢出。
 """
 import argparse
 import html
@@ -17,6 +18,9 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
+import urllib.parse
+from pathlib import Path
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CSS_PATH = os.path.join(HERE, "..", "assets", "base.css")
@@ -30,12 +34,17 @@ COLORS["gray"] = ("--gray", "--text-2")
 COLORS["gray-lt"] = ("--gray-lt", "--text-2")
 for _i in range(1, 6):
     COLORS["red-%d" % _i] = ("--red-%d" % _i, "--red-ink")
+COLOR_MODES = ["entity", "ramp"] + list(COLORS)
+ORIENTS = ["auto", "v", "h"]
 
 LOCK = ('<svg width="18" height="22" viewBox="0 0 18 22" aria-hidden="true">'
         '<path d="M4 10V7a5 5 0 0 1 10 0v3" fill="none" stroke="currentColor" stroke-width="2"/>'
         '<rect x="1" y="10" width="16" height="11" rx="2" fill="currentColor"/></svg>')
 
-BLOCK_RE = re.compile(r'<script\s+type="application/json"\s+data-chart="(\w+)"\s*>(.*?)</script>', re.S)
+# type 和 data-chart 的先后顺序、单双引号都不限
+BLOCK_RE = re.compile(
+    r'<script\b(?=[^>]*\btype\s*=\s*["\']application/json["\'])'
+    r'(?=[^>]*\bdata-chart\s*=\s*["\'](\w+)["\'])[^>]*>(.*?)</script>', re.S | re.I)
 
 
 class BuildError(Exception):
@@ -69,14 +78,60 @@ class Ctx:
         return COLORS[key]
 
 
-# ---------------------------------------------------------------- 数值工具
+# ---------------------------------------------------------------- 校验与数值工具
+
+def show(v):
+    return json.dumps(v, ensure_ascii=False)
+
+
+def is_num(v):
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+
+
+def num(v, where, field, allow_none=False):
+    """数值字段:必须是非负的数;allow_none 时 null 表示没法测。"""
+    if v is None and allow_none:
+        return None
+    if not is_num(v):
+        raise BuildError("%s 的 %s 必须是数字,现在是 %s" % (where, field, show(v)))
+    if v < 0:
+        raise BuildError("%s 的 %s 是负数 %s,暂不支持负值" % (where, field, show(v)))
+    return v
+
+
+def as_list(v, where, field, nonempty=True):
+    if not isinstance(v, list):
+        raise BuildError("%s 的 %s 必须是数组 [...]" % (where, field))
+    if nonempty and not v:
+        raise BuildError("%s 的 %s 不能为空" % (where, field))
+    return v
+
+
+def as_obj(v, where, field):
+    if not isinstance(v, dict):
+        raise BuildError("%s 的 %s 必须是对象 {...}" % (where, field))
+    return v
+
+
+def need(spec, keys, where):
+    as_obj(spec, where, "这一项")
+    for k in keys:
+        if spec.get(k) in (None, ""):
+            raise BuildError("%s 缺少必填字段 \"%s\"" % (where, k))
+
+
+def pick_enum(v, allowed, where, field):
+    if v not in allowed:
+        raise BuildError("%s 的 %s 不认识 %s,可选:%s" % (where, field, show(v), ", ".join(allowed)))
+    return v
+
 
 def fmt(v, unit="", prefix=""):
     if v is None:
         return "—"
     if isinstance(v, float) and v.is_integer():
         v = int(v)
-    s = "{:,}".format(v) if abs(v) >= 10000 else str(v)
+    s = "{:,}".format(v) if abs(v) >= 1000 else str(v)
     return prefix + s + unit
 
 
@@ -95,14 +150,27 @@ def nice_scale(maxv, want=4):
     return top, [round(step * i, 10) for i in range(1, n + 1)]
 
 
+def scale(mx, ticks, maxv, where, field="max"):
+    """返回 (满量程, 刻度)。数据超过给定的满量程直接报错,刻度不超过满量程。"""
+    if mx is not None:
+        mx = num(mx, where, field)
+        if mx <= 0:
+            raise BuildError("%s 的 %s 必须大于 0" % (where, field))
+        if maxv > mx + 1e-9:
+            raise BuildError("%s 有值 %s 超过 %s %s;调大 %s,或者去掉它让脚本自动取整"
+                             % (where, fmt(maxv), field, fmt(mx), field))
+        top, auto = mx, nice_scale(mx)[1]
+    else:
+        top, auto = nice_scale(maxv)
+    if ticks is not None:
+        auto = [num(t, where, "ticks") for t in as_list(ticks, where, "ticks")]
+        if mx is None:
+            top = max([top] + auto)
+    return top, [t for t in auto if 0 < t <= top + 1e-9]
+
+
 def pct(v, top):
     return round(max(0.0, min(100.0, v / top * 100.0)), 2)
-
-
-def need(spec, keys, where):
-    for k in keys:
-        if spec.get(k) in (None, ""):
-            raise BuildError("%s 缺少必填字段 \"%s\"" % (where, k))
 
 
 def head(spec, cid):
@@ -117,7 +185,7 @@ def render_entities(spec, ctx, where):
     if not isinstance(spec, dict):
         raise BuildError("%s entities 应该是 {\"名字\": \"颜色\"}" % where)
     for name, key in spec.items():
-        if key not in COLORS:
+        if not isinstance(key, str) or key not in COLORS:
             raise BuildError("%s 实体「%s」的颜色 %s 不存在,可选:%s" % (where, name, key, ", ".join(COLORS)))
         ctx.entities[name] = key
     return ""
@@ -126,7 +194,8 @@ def render_entities(spec, ctx, where):
 def render_stat(spec, ctx, where, cid):
     need(spec, ["title", "note", "items"], where)
     out = [head(spec, cid), '<div class="c-stats">']
-    for it in spec["items"]:
+    for it in as_list(spec["items"], where, "items"):
+        as_obj(it, where, "items[]")
         out.append('<div class="c-stat"><div class="k">%s</div><div class="v">%s</div>%s</div>' % (
             esc(it.get("label")), esc(it.get("value")),
             '<div class="d">%s</div>' % esc(it["sub"]) if it.get("sub") else ""))
@@ -220,15 +289,20 @@ def render_hbars(groups, ctx, where, top, unit, prefix, mode):
 
 def render_paired(spec, ctx, where, cid):
     """多个实体在同一组类目上对比:每个类目一行,行内每个实体一根细横条。"""
-    cats, series = spec["categories"], spec["series"]
+    need(spec, ["categories", "series"], where)
+    cats = as_list(spec["categories"], where, "categories")
+    series = as_list(spec["series"], where, "series")
     unit, prefix = spec.get("unit", ""), spec.get("prefix", "")
     vals = []
     for s in series:
         need(s, ["name", "values"], where + " 的某个系列")
-        if len(s["values"]) != len(cats):
-            raise BuildError("%s「%s」有 %d 个值,categories 有 %d 个" % (where, s["name"], len(s["values"]), len(cats)))
-        vals += [v for v in s["values"] if v is not None]
-    top = spec.get("max") or nice_scale(max(vals) if vals else 1)[0]
+        vs = as_list(s["values"], where, "series[].values")
+        if len(vs) != len(cats):
+            raise BuildError("%s「%s」有 %d 个值,categories 有 %d 个" % (where, s["name"], len(vs), len(cats)))
+        if s.get("notes") is not None and len(as_list(s["notes"], where, "series[].notes")) != len(cats):
+            raise BuildError("%s「%s」的 notes 要和 categories 一样长(%d 个)" % (where, s["name"], len(cats)))
+        vals += [v for v in (num(v, where, "series[].values", allow_none=True) for v in vs) if v is not None]
+    top = scale(spec.get("max"), None, max(vals) if vals else 0, where)[0]
     colors = [ctx.color(s["name"], s.get("color"), where) for s in series]
     key = "".join('<span><i style="background:var(%s)"></i>%s%s</span>' % (m, esc(s["name"]), '<em>%s</em>' % esc(s["sub"]) if s.get("sub") else "")
                   for s, (m, _) in zip(series, colors))
@@ -248,33 +322,30 @@ def render_paired(spec, ctx, where, cid):
 
 def render_bar(spec, ctx, where, cid):
     need(spec, ["title", "note"], where)
-    if spec.get("categories") or spec.get("series"):
-        need(spec, ["categories", "series"], where)
+    if spec.get("categories") is not None or spec.get("series") is not None:
         return render_paired(spec, ctx, where, cid)
-    groups = spec.get("groups") or [{"items": spec.get("items") or []}]
+    groups = as_list(spec.get("groups") or [{"items": spec.get("items")}], where, "groups")
     unit, prefix = spec.get("unit", ""), spec.get("prefix", "")
-    mode = spec.get("colors", "entity")
+    mode = pick_enum(spec.get("colors", "entity"), COLOR_MODES, where, "colors")
+    orient = pick_enum(spec.get("orient", "auto"), ORIENTS, where, "orient")
     vals = []
     for g in groups:
-        if not g.get("items"):
-            raise BuildError("%s 有一组没有 items" % where)
-        for it in g["items"]:
+        as_obj(g, where, "groups[]")
+        for it in as_list(g.get("items"), where, "items"):
             need(it, ["name"], where + " 的某根柱子")
-            v, ci = it.get("value"), it.get("ci")
+            if "value" not in it:
+                raise BuildError('%s「%s」缺少 value;没法测请写 "value": null' % (where, it["name"]))
+            v = num(it.get("value"), where, "「%s」的 value" % it["name"], allow_none=True)
             if v is not None:
                 vals.append(v)
-            if ci:
+            ci = it.get("ci")
+            if ci is not None:
+                ci = [num(c, where, "「%s」的 ci" % it["name"]) for c in as_list(ci, where, "ci")]
                 if len(ci) != 2 or v is None or not (ci[0] <= v <= ci[1]):
-                    raise BuildError("%s「%s」的 ci %s 必须是 [下限, 上限] 并包含 value %s" % (where, it["name"], ci, v))
+                    raise BuildError("%s「%s」的 ci %s 必须是 [下限, 上限] 并包含 value %s" % (where, it["name"], show(ci), show(v)))
                 vals.append(ci[1])
-    if spec.get("max"):
-        top, ticks = spec["max"], nice_scale(spec["max"])[1]
-    else:
-        top, ticks = nice_scale(max(vals) if vals else 1)
-    if spec.get("ticks"):
-        ticks = spec["ticks"]
+    top, ticks = scale(spec.get("max"), spec.get("ticks"), max(vals) if vals else 0, where)
     total = sum(len(g["items"]) for g in groups)
-    orient = spec.get("orient", "auto")
     if total > 10:
         ctx.warn("%s 有 %d 根柱子,考虑拆图或合并成「其他」" % (where, total))
     out = [head(spec, cid)]
@@ -291,31 +362,57 @@ def render_bar(spec, ctx, where, cid):
     return "".join(out)
 
 
+def x_positions(x, n, where, X0, W):
+    if x.get("values") is None:
+        return [X0 + i * (W - X0) / (n - 1) for i in range(n)]
+    xv = as_list(x["values"], where, "x.values")
+    if len(xv) != n:
+        raise BuildError("%s x.values 和 x.labels 数量不一致" % where)
+    if not all(is_num(v) for v in xv):
+        raise BuildError("%s x.values 必须都是数字" % where)
+    if any(b <= a for a, b in zip(xv, xv[1:])):
+        raise BuildError("%s x.values 必须严格递增" % where)
+    if pick_enum(x.get("scale", "linear"), ["linear", "log"], where, "x.scale") == "log":
+        if xv[0] <= 0:
+            raise BuildError("%s x.values 在对数刻度下必须都大于 0" % where)
+        xv = [math.log10(v) for v in xv]
+    return [X0 + (v - xv[0]) / (xv[-1] - xv[0]) * (W - X0) for v in xv]
+
+
+def phone_labels(show, labels):
+    """手机上显示的横轴标签:从桌面显示的标签里均匀挑 3–4 个,首尾必留。"""
+    want = 3 if max(len(str(l)) for l in labels) >= 6 else 4
+    if len(show) <= want:
+        return set(show)
+    return {show[int(round(k * (len(show) - 1) / (want - 1)))] for k in range(want)}
+
+
 def render_line(spec, ctx, where, cid):
     need(spec, ["title", "note", "x", "series"], where)
-    x, y = spec["x"], spec.get("y") or {}
-    labels = x.get("labels") or []
+    x, y = as_obj(spec["x"], where, "x"), as_obj(spec.get("y") or {}, where, "y")
+    labels = as_list(x.get("labels"), where, "x.labels")
     n = len(labels)
     if n < 2:
         raise BuildError("%s x.labels 至少要 2 个" % where)
     W, H, X0 = 400.0, 240.0, 36.0
-    if x.get("values"):
-        xv = x["values"]
-        if len(xv) != n:
-            raise BuildError("%s x.values 和 x.labels 数量不一致" % where)
-        f = (lambda v: math.log10(v)) if x.get("scale") == "log" else (lambda v: v)
-        lo, hi = f(xv[0]), f(xv[-1])
-        xs = [X0 + (f(v) - lo) / (hi - lo) * (W - X0) for v in xv]
-    else:
-        xs = [X0 + i * (W - X0) / (n - 1) for i in range(n)]
+    xs = x_positions(x, n, where, X0, W)
     unit, prefix = y.get("unit", ""), y.get("prefix", "")
-    allv = [v for s in spec["series"] for v in s.get("values", []) if v is not None]
+    series = as_list(spec["series"], where, "series")
+    allv = []
+    for s in series:
+        need(s, ["name", "values"], where + " 的某条线")
+        vs = as_list(s["values"], where, "series[].values")
+        if len(vs) != n:
+            raise BuildError("%s「%s」有 %d 个值,x 轴有 %d 个标签" % (where, s["name"], len(vs), n))
+        got = [v for v in (num(v, where, "「%s」的 values" % s["name"], allow_none=True) for v in vs) if v is not None]
+        if not got:
+            raise BuildError("%s「%s」全是空值" % (where, s["name"]))
+        allv += got
     thr = spec.get("threshold")
-    if thr:
-        allv.append(thr["value"])
-    top, ticks = (y["max"], y.get("ticks") or nice_scale(y["max"])[1]) if y.get("max") else nice_scale(max(allv))
-    if y.get("ticks"):
-        ticks = y["ticks"]
+    if thr is not None:
+        as_obj(thr, where, "threshold")
+        allv.append(num(thr.get("value"), where, "threshold.value"))
+    top, ticks = scale(y.get("max"), y.get("ticks"), max(allv), where, "y.max")
     Y = lambda v: round(H - v / top * H, 1)
     svg = ['<svg viewBox="0 0 400 240" role="img" aria-label="%s">' % esc(spec["title"])]
     svg.append('<g style="stroke:var(--grid)" stroke-width="1">')
@@ -323,16 +420,13 @@ def render_line(spec, ctx, where, cid):
         svg.append('<line x1="%s" x2="400" y1="%s" y2="%s"/>' % (X0, Y(t), Y(t)))
     svg.append("</g>")
     svg.append('<line x1="%s" x2="400" y1="240" y2="240" style="stroke:var(--axis)" stroke-width="1"/>' % X0)
-    if thr:
+    if thr is not None:
         svg.append('<line x1="%s" x2="400" y1="%s" y2="%s" style="stroke:var(--axis)" stroke-width="1" stroke-dasharray="4 4"/>'
                    % (X0, Y(thr["value"]), Y(thr["value"])))
     ends, dots = [], []
     svg.append('<g fill="none" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">')
-    for s in spec["series"]:
-        need(s, ["name", "values"], where + " 的某条线")
+    for s in series:
         vs = s["values"]
-        if len(vs) != n:
-            raise BuildError("%s「%s」有 %d 个值,x 轴有 %d 个标签" % (where, s["name"], len(vs), n))
         mark, ink = ctx.color(s["name"], s.get("color"), where)
         seg = []
         for i, v in enumerate(vs + [None]):
@@ -341,49 +435,49 @@ def render_line(spec, ctx, where, cid):
             elif seg:
                 if len(seg) > 1:
                     svg.append('<polyline style="stroke:var(%s)" points="%s"/>' % (mark, " ".join(seg)))
+                else:
+                    cx, cy = seg[0].split(",")
+                    svg.append('<circle cx="%s" cy="%s" r="3" style="fill:var(%s)" stroke="none"/>' % (cx, cy, mark))
                 seg = []
-        last = max((i for i, v in enumerate(vs) if v is not None), default=None)
-        if last is None:
-            raise BuildError("%s「%s」全是空值" % (where, s["name"]))
+        last = max(i for i, v in enumerate(vs) if v is not None)
         dots.append('<circle cx="%s" cy="%s" r="4.5" style="fill:var(%s);stroke:var(--bg)" stroke-width="2"/>'
                     % (round(xs[last], 1), Y(vs[last]), mark))
         ends.append([Y(vs[last]) / H * 100, vs[last], s["name"], ink])
     svg.append("</g>")
     svg.extend(dots)
     svg.append("</svg>")
-    if thr:
+    if thr is not None:
         ends.append([Y(thr["value"]) / H * 100, None, thr.get("label", ""), "--text-2"])
     ends.sort(key=lambda e: e[0])
     GAP = 7.0
     for i in range(1, len(ends)):
         if ends[i][0] - ends[i - 1][0] < GAP:
             ends[i][0] = ends[i - 1][0] + GAP
+    # 往下推到图外的标签再往回收,保证都在绘图区内
+    if ends and ends[-1][0] > 100:
+        ends[-1][0] = 100.0
+        for i in range(len(ends) - 2, -1, -1):
+            ends[i][0] = max(0.0, min(ends[i][0], ends[i + 1][0] - GAP))
     ylab = "".join('<div class="c-y" style="top:%s%%">%s</div>' % (round(100 - pct(t, top), 2), esc(fmt(t, unit, prefix)))
                    for t in ticks)
-    thr_html = ""
     step = max(1, math.ceil(n / 6))
     show = [i for i in range(n) if i % step == 0]
     if show[-1] != n - 1:
         if (n - 1) - show[-1] < step * 0.6:
             show.pop()
         show.append(n - 1)
-    mcount = 3 if max(len(str(l)) for l in labels) >= 6 else 4
-    mstep = max(1, math.ceil((n - 1) / (mcount - 1)))
-    mshow = {i for i in range(0, n, mstep)} | {n - 1}
-    if n - 1 - max(i for i in mshow if i != n - 1) < mstep * 0.6:
-        mshow.discard(max(i for i in mshow if i != n - 1))
+    mshow = phone_labels(show, labels)
     xl = []
     for i in show:
-        mh = "" if i in mshow else " mh"
         if i == n - 1:
             xl.append('<span class="last">%s</span>' % esc(labels[i]))
         else:
-            xl.append('<span class="%s" style="left:%s%%">%s</span>' % (mh.strip(), round(xs[i] / W * 100, 2), esc(labels[i])))
+            xl.append('<span class="%s" style="left:%s%%">%s</span>' % ("" if i in mshow else "mh", round(xs[i] / W * 100, 2), esc(labels[i])))
     endh = "".join('<div style="top:%s%%;color:var(%s)"><b>%s</b>%s</div>' % (round(t, 2), ink, esc(fmt(v, unit, prefix)), esc(nm))
                    if v is not None else '<div class="thr" style="top:%s%%"><b><i></i></b>%s</div>' % (round(t, 2), esc(nm))
                    for t, v, nm, ink in ends)
     out = [head(spec, cid), '<div class="c-line">',
-           '<div class="c-lplot">%s%s%s</div>' % ("".join(svg), ylab, thr_html),
+           '<div class="c-lplot">%s%s</div>' % ("".join(svg), ylab),
            '<div class="c-ends">%s</div>' % endh,
            '<div class="c-x">%s</div><div></div>' % "".join(xl)]
     if x.get("title"):
@@ -396,14 +490,44 @@ NUM_RE = re.compile(r"-?\d[\d,]*\.?\d*")
 
 
 def cell_num(c):
-    t = c.get("v") if isinstance(c, dict) else c
-    m = NUM_RE.search(str(t or ""))
-    return float(m.group(0).replace(",", "")) if m else None
+    """从格子文本里取出 (单位, 数值);单位是数字前后的文字,如 ¥、%、ms。"""
+    v = c.get("v") if isinstance(c, dict) else c
+    t = "" if v is None else str(v)
+    m = NUM_RE.search(t)
+    if not m:
+        return None
+    return (t[:m.start()].strip(), t[m.end():].strip()), float(m.group(0).replace(",", ""))
+
+
+def row_best(r, cells, ncols, ctx, where):
+    if r.get("best") is not None:
+        b = r["best"] if isinstance(r["best"], list) else [r["best"]]
+        for i in b:
+            if not isinstance(i, int) or isinstance(i, bool) or not 0 <= i < ncols:
+                raise BuildError("%s 行「%s」的 best %s 不是有效的列序号(0–%d)" % (where, r["name"], show(i), ncols - 1))
+        return set(b)
+    better = r.get("better")
+    if better is None:
+        ctx.warn("%s 行「%s」没写 better 或 best,没有标最优" % (where, r["name"]))
+        return set()
+    pick_enum(better, ["high", "low"], where, "better")
+    nums = [(i, cell_num(c)) for i, c in enumerate(cells)]
+    nums = [(i, p) for i, p in nums if p is not None]
+    if len(nums) < 2:
+        ctx.warn("%s 行「%s」解析不出数字,没有标最优;请用 best 指定列序号" % (where, r["name"]))
+        return set()
+    if len({p[0] for _, p in nums}) > 1:
+        ctx.warn("%s 行「%s」各格单位不一致,没有标最优;请统一单位或用 best 指定列序号" % (where, r["name"]))
+        return set()
+    target = (max if better == "high" else min)(p[1] for _, p in nums)
+    return {i for i, p in nums if p[1] == target}
 
 
 def render_table(spec, ctx, where, cid):
     need(spec, ["title", "note", "columns", "rows"], where)
-    cols = spec["columns"]
+    cols = as_list(spec["columns"], where, "columns")
+    for c in cols:
+        need(c, ["name"], where + " 的某一列")
     order = list(range(len(cols)))
     picks = [i for i, c in enumerate(cols) if c.get("pick")]
     if len(picks) > 1:
@@ -420,23 +544,12 @@ def render_table(spec, ctx, where, cid):
         out.append('<th%s%s>%s%s</th>' % (' class="pick"' if c.get("pick") else "", style, esc(c["name"]),
                                           '<span class="sub">%s</span>' % esc(c["sub"]) if c.get("sub") else ""))
     out.append("</tr></thead><tbody>")
-    for r in spec["rows"]:
+    for r in as_list(spec["rows"], where, "rows"):
         need(r, ["name", "cells"], where + " 的某一行")
-        cells = r["cells"]
+        cells = as_list(r["cells"], where, "cells")
         if len(cells) != len(cols):
             raise BuildError("%s 行「%s」有 %d 格,表头有 %d 列" % (where, r["name"], len(cells), len(cols)))
-        best = set()
-        if r.get("best") is not None:
-            b = r["best"]
-            best = set(b if isinstance(b, list) else [b])
-        elif r.get("better") in ("high", "low"):
-            nums = [(i, cell_num(c)) for i, c in enumerate(cells)]
-            nums = [(i, v) for i, v in nums if v is not None]
-            if len(nums) >= 2:
-                target = (max if r["better"] == "high" else min)(v for _, v in nums)
-                best = {i for i, v in nums if v == target}
-            else:
-                ctx.warn("%s 行「%s」解析不出数字,没有标最优;请用 best 指定列序号" % (where, r["name"]))
+        best = row_best(r, cells, len(cols), ctx, where)
         out.append('<tr><th>%s%s</th>' % (esc(r["name"]), '<span class="sub">%s</span>' % esc(r["sub"]) if r.get("sub") else ""))
         for i in order:
             c = cells[i]
@@ -451,20 +564,25 @@ def render_table(spec, ctx, where, cid):
 
 
 RENDER = {"entities": render_entities, "stat": render_stat, "bar": render_bar, "line": render_line, "table": render_table}
+# 写错字段类型时渲染函数可能抛出的异常,统一转成带位置的 BuildError
+SHAPE_ERRORS = (TypeError, ValueError, KeyError, AttributeError, IndexError, ZeroDivisionError)
 
 
 # ---------------------------------------------------------------- 组装与截图
 
 def build(src_text, ctx):
-    if re.search(r"<html|<head|<body", src_text, re.I):
+    if re.search(r"<(html|head|body)\b", src_text, re.I):
         raise BuildError("design.src.html 只写 <main> 里面的内容,不要写 <html>/<head>/<body>")
-    styles = re.findall(r"<style[^>]*>(.*?)</style>", src_text, re.S)
+    styles = re.findall(r"(<style[^>]*>.*?</style>)", src_text, re.S)
     body = re.sub(r"<style[^>]*>.*?</style>", "", src_text, flags=re.S)
     blocks = list(BLOCK_RE.finditer(body))
     # 先收集 entities,保证后面所有图按声明取色
     for i, m in enumerate(blocks):
         if m.group(1) == "entities":
-            render_entities(parse(m, i), ctx, "第 %d 个图表块" % (i + 1))
+            try:
+                render_entities(parse(m, i), ctx, "第 %d 个图表块" % (i + 1))
+            except SHAPE_ERRORS as e:
+                raise BuildError("第 %d 个图表块(entities)格式不对(%s: %s)" % (i + 1, type(e).__name__, e))
 
     def sub(m, counter=[0]):
         counter[0] += 1
@@ -477,21 +595,26 @@ def build(src_text, ctx):
             return ""
         ctx.counts[kind] = ctx.counts.get(kind, 0) + 1
         ctx.n += 1
-        return RENDER[kind](parse(m, i - 1), ctx, where, "c%d" % ctx.n)
+        try:
+            return RENDER[kind](parse(m, i - 1), ctx, where, "c%d" % ctx.n)
+        except SHAPE_ERRORS as e:
+            raise BuildError("%s 格式不对(%s: %s),对照 references/chart-spec.md 检查字段类型" % (where, type(e).__name__, e))
 
     body = BLOCK_RE.sub(sub, body)
+    if re.search(r"\bdata-chart\s*=", body):
+        raise BuildError('有图表块没被识别,请写成 <script type="application/json" data-chart="类型">…</script>')
     h1 = re.search(r"<h1[^>]*>(.*?)</h1>", body, re.S)
-    title = re.sub(r"<[^>]+>", "", h1.group(1)).strip() if h1 else "design"
+    title = html.unescape(re.sub(r"<[^>]+>", "", h1.group(1))).strip() if h1 else "design"
     if not h1:
         ctx.warn("没有 <h1>,<title> 暂用 design")
     with open(CSS_PATH, encoding="utf-8") as f:
         css = f.read()
-    extra = "".join("<style>%s</style>" % s for s in styles)
+    extra = "".join(styles)
     doc = ('<!doctype html>\n<html lang="zh-CN">\n<head>\n<meta charset="utf-8">\n'
            '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
            '<title>%s</title>\n<style>\n%s</style>\n%s</head>\n<body>\n<main>\n%s\n</main>\n</body>\n</html>\n'
            % (esc(title), css, extra, body.strip()))
-    if "gradient" in doc.lower():
+    if re.search(r"-gradient\s*\(|<(linear|radial)Gradient\b", doc, re.I):
         ctx.warn("输出里出现了 gradient,规定全文不用渐变")
     return doc
 
@@ -500,15 +623,20 @@ def parse(m, i):
     try:
         return json.loads(m.group(2))
     except json.JSONDecodeError as e:
-        raise BuildError("第 %d 个图表块(%s)JSON 解析失败:块内第 %d 行第 %d 列,%s"
-                         % (i + 1, m.group(1), e.lineno, e.colno, e.msg))
+        hint = ";字符串里有 </script> 时要写成 <\\/script>" if e.msg.startswith("Unterminated string") else ""
+        raise BuildError("第 %d 个图表块(%s)JSON 解析失败:块内第 %d 行第 %d 列,%s%s"
+                         % (i + 1, m.group(1), e.lineno, e.colno, e.msg, hint))
 
 
 def find_chrome():
-    mac = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-    if os.path.exists(mac):
-        return mac
-    for name in ("google-chrome", "google-chrome-stable", "chromium", "chromium-browser"):
+    for p in ("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+              "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+              r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+              r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+              r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"):
+        if os.path.exists(p):
+            return p
+    for name in ("google-chrome", "google-chrome-stable", "chromium", "chromium-browser", "microsoft-edge", "msedge"):
         p = shutil.which(name)
         if p:
             return p
@@ -516,43 +644,58 @@ def find_chrome():
 
 
 def shoot(out_path):
+    """截桌面图和手机图。返回手机宽度下的 scrollWidth;截不了图时返回 None。"""
     chrome = find_chrome()
     if not chrome:
         print("⚠ 没找到 Chrome/Chromium,跳过截图")
-        return
-    d = os.path.dirname(os.path.abspath(out_path))
-    name = os.path.basename(out_path)
-    stem = os.path.splitext(name)[0]
-    probe = os.path.join(d, "_probe.html")
-    with open(probe, "w", encoding="utf-8") as f:
-        f.write('<iframe id="m" src="%s" style="border:0;width:375px;height:800px"></iframe>'
-                '<iframe id="d" src="%s" style="border:0;width:1440px;height:800px"></iframe>'
-                '<script>onload=function(){var m=document.getElementById("m").contentDocument.documentElement,'
-                'e=document.getElementById("d").contentDocument.documentElement;'
-                'document.title="sw="+m.scrollWidth+";mh="+m.scrollHeight+";dh="+e.scrollHeight}</script>' % (name, name))
+        return None
+    out = Path(out_path).resolve()
+    src = urllib.parse.quote(out.name)
+    fd, probe_name = tempfile.mkstemp(prefix="_probe-", suffix=".html", dir=str(out.parent))
+    os.close(fd)
+    probe = Path(probe_name)
     base = [chrome, "--headless", "--disable-gpu", "--hide-scrollbars", "--allow-file-access-from-files"]
     try:
-        dom = subprocess.run(base + ["--virtual-time-budget=3000", "--dump-dom", "file://" + probe],
+        probe.write_text('<iframe id="m" src="%s" style="border:0;width:375px;height:800px"></iframe>'
+                         '<iframe id="d" src="%s" style="border:0;width:1440px;height:800px"></iframe>'
+                         '<script>onload=function(){var m=document.getElementById("m").contentDocument.documentElement,'
+                         'e=document.getElementById("d").contentDocument.documentElement;'
+                         'document.title="sw="+m.scrollWidth+";mh="+m.scrollHeight+";dh="+e.scrollHeight}</script>'
+                         % (src, src), encoding="utf-8")
+        dom = subprocess.run(base + ["--virtual-time-budget=3000", "--dump-dom", probe.as_uri()],
                              capture_output=True, text=True, timeout=60).stdout
         m = re.search(r"sw=(\d+);mh=(\d+);dh=(\d+)", dom)
         if not m:
             print("⚠ 没量到页面尺寸,跳过截图")
-            return
+            return None
         sw, mh, dh = (int(g) for g in m.groups())
         mh, dh = min(mh + 40, 16000), min(dh + 40, 16000)
-        dpng, mpng = os.path.join(d, "desktop.png"), os.path.join(d, "mobile.png")
-        subprocess.run(base + ["--window-size=1440,%d" % dh, "--screenshot=" + dpng, "file://" + os.path.abspath(out_path)],
+        dpng, mpng = out.parent / "desktop.png", out.parent / "mobile.png"
+        for png in (dpng, mpng):
+            if png.is_file():
+                png.unlink()
+        subprocess.run(base + ["--window-size=1440,%d" % dh, "--screenshot=%s" % dpng, out.as_uri()],
                        capture_output=True, timeout=60)
-        with open(probe, "w", encoding="utf-8") as f:
-            f.write('<body style="margin:0"><iframe src="%s" style="border:0;width:375px;height:%dpx"></iframe></body>' % (name, mh))
-        subprocess.run(base + ["--window-size=400,%d" % mh, "--screenshot=" + mpng, "file://" + probe],
+        probe.write_text('<body style="margin:0"><iframe src="%s" style="border:0;width:375px;height:%dpx"></iframe></body>'
+                         % (src, mh), encoding="utf-8")
+        subprocess.run(base + ["--window-size=400,%d" % mh, "--screenshot=%s" % mpng, probe.as_uri()],
                        capture_output=True, timeout=60)
+    except subprocess.TimeoutExpired:
+        print("⚠ 截图超时,跳过截图")
+        return None
+    except OSError as e:
+        print("⚠ 截图写不进 %s(%s),跳过截图" % (out.parent, e))
+        return None
     finally:
-        if os.path.exists(probe):
-            os.remove(probe)
-    ok = "✓" if sw == 375 else "✗ 手机上页面横向溢出,检查宽表格/宽图"
-    print("截图:%s  %s" % (os.path.basename(dpng), os.path.basename(mpng)))
+        if probe.exists():
+            probe.unlink()
+    if not (dpng.is_file() and mpng.is_file()):
+        print("⚠ Chrome 没有写出截图,跳过截图")
+        return None
+    ok = "✓" if sw == 375 else "✗ 手机上页面横向溢出,检查宽表格、宽图或过长的图表标签"
+    print("截图:%s  %s" % (dpng.name, mpng.name))
     print("手机宽度:sw=%d %s" % (sw, ok))
+    return sw
 
 
 def main():
@@ -564,19 +707,28 @@ def main():
     out = a.out or os.path.join(os.path.dirname(os.path.abspath(a.src)), "design.html")
     ctx = Ctx()
     try:
-        with open(a.src, encoding="utf-8") as f:
-            doc = build(f.read(), ctx)
+        try:
+            with open(a.src, encoding="utf-8") as f:
+                text = f.read()
+        except (OSError, UnicodeDecodeError) as e:
+            raise BuildError("读不到 %s(%s)" % (a.src, getattr(e, "strerror", None) or e))
+        doc = build(text, ctx)
+        try:
+            with open(out, "w", encoding="utf-8") as f:
+                f.write(doc)
+        except OSError as e:
+            raise BuildError("写不进 %s(%s)" % (out, e.strerror or e))
     except BuildError as e:
         print("✗ 构建失败:" + str(e), file=sys.stderr)
         sys.exit(1)
-    with open(out, "w", encoding="utf-8") as f:
-        f.write(doc)
     kinds = "、".join("%s×%d" % (k, v) for k, v in ctx.counts.items()) or "无图表"
     print("✓ 已生成 %s(%s)" % (out, kinds))
     for w in ctx.warnings:
         print("⚠ " + w)
     if a.shot:
-        shoot(out)
+        sw = shoot(out)
+        if sw is not None and sw != 375:
+            sys.exit(2)
 
 
 if __name__ == "__main__":
