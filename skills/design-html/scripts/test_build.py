@@ -314,6 +314,132 @@ class Shot(unittest.TestCase):
                 self.assertEqual(cm.exception.code, 1, argv)
 
 
+def node(i, at, zone=None, **kw):
+    return dict({"id": i, "name": i.upper(), "sub": "s", "at": at}, **({"zone": zone} if zone else {}), **kw)
+
+
+def arch(nodes, edges=(), **kw):
+    return chart("arch", dict({"caption": "c", "nodes": nodes, "edges": list(edges)}, **kw))
+
+
+def rects(doc):
+    return [tuple(map(float, m)) for m in re.findall(
+        r'<g class="a-n[^"]*"><rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"', doc)]
+
+
+def segments(doc):
+    """Axis-aligned segments of every edge path; hop arcs count as part of their segment."""
+    out = []
+    for d in re.findall(r'<path class="a-e[^"]*" d="([^"]+)"', doc):
+        pts = [tuple(map(float, p)) for p in re.findall(r"[ML]([\d.]+) ([\d.]+)", d)]
+        out += list(zip(pts, pts[1:]))
+    return out
+
+
+def crosses(seg, r, inset=1):
+    (x1, y1), (x2, y2) = seg
+    x, y, w, h = r
+    return (min(x1, x2) < x + w - inset and max(x1, x2) > x + inset
+            and min(y1, y2) < y + h - inset and max(y1, y2) > y + inset)
+
+
+# 2x2 block whose diagonal edges cannot use an L shape: forces the Z routes
+GRID = [node("a", [0, 0], "z"), node("b", [1, 0], "z"), node("c", [0, 1], "z"), node("d", [1, 1], "z"),
+        node("u", [2, 0]), node("e", [0, 3])]
+GRID_EDGES = [{"from": "a", "to": "c"}, {"from": "a", "to": "d"}, {"from": "c", "to": "b"},
+              {"from": "d", "to": "b"}, {"from": "b", "to": "u", "label": "HTTPS"}, {"from": "e", "to": "c"}]
+
+
+class Arch(unittest.TestCase):
+    def test_renders_zones_nodes_and_arrows(self):
+        doc, ctx = run(arch(GRID, GRID_EDGES, zones=[{"id": "z", "name": "线上", "tone": "green"}]))
+        self.assertEqual(len(rects(doc)), len(GRID))
+        self.assertEqual(doc.count('class="a-n t-green"'), 4)
+        self.assertEqual(doc.count('class="a-n t-gray"'), 2)
+        self.assertIn('class="a-z"', doc)
+        self.assertIn(">HTTPS<", doc)
+        self.assertEqual(len(re.findall(r'<path class="a-e', doc)), len(GRID_EDGES))
+        self.assertIn('role="img"', doc)
+        self.assertEqual(ctx.counts.get("arch"), 1)
+
+    def test_lines_never_pass_through_nodes(self):
+        doc, _ = run(arch(GRID, GRID_EDGES, zones=[{"id": "z", "name": "线上"}]))
+        for seg in segments(doc):
+            for r in rects(doc):
+                self.assertFalse(crosses(seg, r), (seg, r))
+
+    def test_no_two_lines_share_a_segment(self):
+        _, ctx = run(arch(GRID, GRID_EDGES, zones=[{"id": "z", "name": "线上"}]))
+        self.assertFalse([w for w in ctx.warnings if "重叠" in w], ctx.warnings)
+
+    def test_crossing_gets_a_hop(self):
+        doc, _ = run(arch(GRID, GRID_EDGES, zones=[{"id": "z", "name": "线上"}]))
+        self.assertRegex(doc, r'<path class="a-e[^"]*" d="[^"]*A6 6')
+
+    def test_blocked_route_fails(self):
+        # a -> c has to pass b in the same row
+        with self.assertRaises(build.BuildError):
+            run(arch([node("a", [0, 0]), node("b", [1, 0]), node("c", [2, 0])], [{"from": "a", "to": "c"}]))
+
+    def test_forced_route_is_used(self):
+        nodes = [node("a", [0, 0]), node("b", [1, 1])]
+        doc_hv, _ = run(arch(nodes, [{"from": "a", "to": "b", "route": "hv"}]))
+        doc_vh, _ = run(arch(nodes, [{"from": "a", "to": "b", "route": "vh"}]))
+        self.assertNotEqual(segments(doc_hv), segments(doc_vh))
+        with self.assertRaises(build.BuildError):
+            run(arch([node("a", [0, 0]), node("b", [1, 0])], [{"from": "a", "to": "b", "route": "hv"}]))
+
+    def test_zone_must_be_a_clean_rectangle(self):
+        with self.assertRaises(build.BuildError):
+            run(arch([node("a", [0, 0], "z"), node("x", [1, 0]), node("b", [2, 0], "z")],
+                     zones=[{"id": "z", "name": "z"}]))
+
+    def test_bad_input_fails(self):
+        for body in (arch([node("a", [0, 0]), node("b", [0, 0])]),                       # same cell
+                     arch([node("a", [0, 0])], [{"from": "a", "to": "nope"}]),            # unknown id
+                     arch([node("a", [0, 0], m=[0, 0]), node("b", [1, 0])]),              # m on some nodes only
+                     arch([node("a", [0, -1])]),                                          # negative cell
+                     arch([node("a", ["0", 0])]),                                         # string cell
+                     arch([node("a", [0, 0], tone="pink")]),                              # unknown tone
+                     arch([node("a", [0, 0], "nozone")]),                                 # undeclared zone
+                     arch([node("a", [0, 0])], legend={"bogus": "x"})):
+            with self.assertRaises(build.BuildError):
+                run(body)
+
+    def test_meaning_without_legend_warns(self):
+        _, ctx = run(arch([node("a", [0, 0], "z"), node("b", [1, 0], "z", tone="gray")],
+                          [{"from": "a", "to": "b", "dash": True, "flow": "out"}],
+                          zones=[{"id": "z", "name": "z", "tone": "blue"}]))
+        self.assertEqual(len(ctx.warnings), 3, ctx.warnings)   # dash, flow, gray node in a blue zone
+
+    def test_empty_rows_and_columns_are_compressed(self):
+        near, _ = run(arch([node("a", [0, 0]), node("b", [1, 1])], [{"from": "a", "to": "b"}]))
+        far, _ = run(arch([node("a", [0, 0]), node("b", [4, 6])], [{"from": "a", "to": "b"}]))
+        self.assertEqual(near, far)
+
+    def test_label_widens_its_gap(self):
+        def gap(label):
+            doc, _ = run(arch([node("a", [0, 0]), node("b", [1, 0])], [{"from": "a", "to": "b", "label": label}]))
+            (x1, _, w1, _), (x2, _, _, _) = rects(doc)
+            return x2 - (x1 + w1)
+        self.assertGreater(gap("一二三四五六"), gap("ssh"))
+
+    def test_wide_diagram_scrolls_on_phones_unless_mobile_layout_given(self):
+        wide = [node("n%d" % i, [i, 0]) for i in range(4)]
+        doc, ctx = run(arch(wide))
+        self.assertIn('class="scroll-x"', doc)
+        self.assertTrue(ctx.warnings)
+        for i, n in enumerate(wide):
+            n["m"] = [0, i]
+        doc, _ = run(arch(wide))
+        self.assertIn('class="only-desktop"', doc)
+        self.assertIn('class="only-mobile"', doc)
+        self.assertNotIn('class="scroll-x"', doc)
+        # marker ids stay unique when both layouts are in one page
+        ids = re.findall(r'<marker id="([^"]+)"', doc)
+        self.assertEqual(len(ids), len(set(ids)))
+
+
 class MobileOverflow(unittest.TestCase):
     def test_long_end_labels_wrap_on_phones(self):
         with open(build.CSS_PATH, encoding="utf-8") as f:

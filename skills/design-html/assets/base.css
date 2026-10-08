@@ -26,6 +26,9 @@
   --flow-main: #142f4b;   /* 主交互 / 发起动作 */
   --flow-out: #cc3143;    /* 输出 / 结论 */
   --flow-in: #6f35a2;     /* 输入 / 素材流入 */
+
+  /* 架构图:连线中性灰,分组虚线框 */
+  --a-line: #8f8c84;  --a-zone: #cdcac1;
 }
 
 * { box-sizing: border-box; }
@@ -63,6 +66,26 @@ figure.diagram > svg, figure.diagram > .scroll-x > svg { display: block; width: 
 .only-mobile { display: none !important; }
 figure.diagram figcaption { color: var(--text-2); font-size: 14px; margin-top: 10px; }
 .scroll-x { overflow-x: auto; }
+
+/* 架构图(arch 数据块;手绘 SVG 也可以直接用这些 class)
+   节点:浅底 + 同色描边 + 深色标题 + 中色副标题;颜色表示节点归属,不表示数据流 */
+.t-blue   { --nb: #e8eef8; --nl: #8eaad8; --ni: #123d82; --ns: #2a5aa8; }
+.t-green  { --nb: #e2f3ec; --nl: #6cbfa2; --ni: #0a5443; --ns: #0c7259; }
+.t-orange { --nb: #f9eddf; --nl: #dcaa74; --ni: #6a3a0b; --ns: #8a4e10; }
+.t-violet { --nb: #efecfb; --nl: #a499e0; --ni: #3d2f86; --ns: #5a49ad; }
+.t-gray   { --nb: #f2f0ea; --nl: #b3b0a7; --ni: #3d3c38; --ns: #65635d; }
+figure.arch svg { margin: 0 auto; }
+.a-n rect { fill: var(--nb); stroke: var(--nl); stroke-width: 1; }
+.a-n .t { fill: var(--ni); font-size: 15px; font-weight: 500; text-anchor: middle; dominant-baseline: central; }
+.a-n .s { fill: var(--ns); font-size: 13px; text-anchor: middle; dominant-baseline: central; }
+.a-z rect { fill: none; stroke: var(--a-zone); stroke-width: 1; stroke-dasharray: 4 4; }
+.a-z text { fill: var(--text-2); font-size: 14px; }
+.a-e { fill: none; stroke-width: 1.5; stroke-linejoin: round; }
+.a-e.dash { stroke-dasharray: 4 4; }
+.a-ah { fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.a-lab { fill: var(--text-2); font-size: 13px; paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
+.a-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 20px; margin-top: 12px; font-size: 14px; color: var(--text-2); }
+.a-legend span { display: inline-flex; align-items: center; gap: 8px; }
 
 /* 普通表格 */
 .tbl-wrap { overflow-x: auto; margin: 16px 0; }
