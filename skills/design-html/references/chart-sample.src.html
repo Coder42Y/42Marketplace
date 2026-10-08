@@ -5,28 +5,6 @@
 {"混合 v2": "blue", "混合 v1": "blue-lt", "纯向量": "green", "BM25 v1": "gray"}
 </script>
 
-<script type="application/json" data-chart="arch">
-{"caption": "混合 v2 在线上多了两步：BM25 和向量两路并行召回，再由 reranker 合并打分后交给 LLM。向量索引由离线任务每晚重建。",
- "zones": [{"id": "on", "name": "线上服务", "tone": "blue"}, {"id": "off", "name": "离线索引", "tone": "violet"}],
- "nodes": [
-   {"id": "user", "name": "用户", "sub": "App · 网页", "at": [0, 0], "m": [0, 0]},
-   {"id": "svc", "name": "检索服务", "sub": "无状态，可横向扩容", "zone": "on", "at": [1, 0], "m": [0, 1]},
-   {"id": "rr", "name": "Reranker", "sub": "GPU 推理", "zone": "on", "at": [2, 0], "m": [1, 1]},
-   {"id": "llm", "name": "LLM API", "sub": "外部服务", "at": [3, 0], "m": [1, 0]},
-   {"id": "bm", "name": "BM25", "sub": "Elasticsearch", "zone": "on", "at": [1, 1], "m": [0, 2]},
-   {"id": "vec", "name": "向量召回", "sub": "Milvus", "zone": "on", "at": [2, 1], "m": [1, 2]},
-   {"id": "etl", "name": "文档 ETL", "sub": "每晚 2 点", "zone": "off", "at": [1, 2], "m": [0, 3]},
-   {"id": "emb", "name": "Embedding", "sub": "批量生成", "zone": "off", "at": [2, 2], "m": [1, 3]}],
- "edges": [
-   {"from": "user", "to": "svc", "label": "HTTPS"},
-   {"from": "svc", "to": "bm"}, {"from": "svc", "to": "vec"},
-   {"from": "bm", "to": "rr"}, {"from": "vec", "to": "rr"},
-   {"from": "rr", "to": "llm", "flow": "out"},
-   {"from": "etl", "to": "emb"},
-   {"from": "emb", "to": "vec", "dash": true}],
- "legend": {"out": "生成答案", "dash": "异步，每晚一次"}}
-</script>
-
 <script type="application/json" data-chart="stat">
 {"title": "换成混合检索 v2，召回率翻了将近一倍",
  "note": "500 条真实用户问题；成本含向量库和 GPU 推理",
