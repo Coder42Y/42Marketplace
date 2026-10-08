@@ -5,7 +5,7 @@
   python3 build.py design.src.html --shot     # 另外截桌面图、手机图,并检查手机宽度
 
 design.src.html 只写 <main> 里的内容。图表写成
-  <script type="application/json" data-chart="entities|stat|bar|line|table">{...}</script>
+  <script type="application/json" data-chart="entities|stat|bar|line|table|arch">{...}</script>
 格式见 references/chart-spec.md。只用 Python 3 标准库。
 退出码:0 成功;1 构建失败;2 构建成功但手机上页面横向溢出。
 """
@@ -563,7 +563,490 @@ def render_table(spec, ctx, where, cid):
     return "".join(out)
 
 
-RENDER = {"entities": render_entities, "stat": render_stat, "bar": render_bar, "line": render_line, "table": render_table}
+# ---------------------------------------------------------------- 架构图
+
+TONES = ["blue", "green", "orange", "violet", "gray"]
+FLOWS = {"main": "--flow-main", "out": "--flow-out", "in": "--flow-in"}
+LEGEND_KEYS = ["dash"] + list(FLOWS) + TONES
+A_PAD, A_MINW, A_H1, A_H2 = 18, 136, 44, 60   # 节点左右内边距、最小宽、单行高、双行高
+A_CGAP, A_RGAP = 56, 44                       # 列间距、行间距
+A_ZPAD, A_ZTOP, A_ZGAP, A_EDGE = 20, 40, 24, 4  # 分组内边距、分组顶部标题区、分组间距、画布留边
+A_HOP = 6                                     # 交叉处小弧半径
+
+
+def text_w(s, size):
+    """估算文字宽度(px)。中文按 1em,ASCII 按字形宽窄估,宁宽勿窄。"""
+    w = 0.0
+    for ch in str(s):
+        if ch in " .,:;|!il'`ijt()[]":
+            w += 0.34
+        elif ch.isascii() and ch.isupper():
+            w += 0.68
+        elif ch.isascii():
+            w += 0.58
+        else:
+            w += 1.0
+    return w * size
+
+
+def cell_of(v, where, field):
+    if (not isinstance(v, list) or len(v) != 2
+            or not all(isinstance(x, int) and not isinstance(x, bool) and x >= 0 for x in v)):
+        raise BuildError("%s 的 %s 必须是 [列, 行],两个从 0 开始的整数,现在是 %s" % (where, field, show(v)))
+    return tuple(v)
+
+
+def between(a, b):
+    """a、b 之间(不含两端)的整数。"""
+    lo, hi = sorted((a, b))
+    return range(lo + 1, hi)
+
+
+ROUTES = ["hv", "vh", "vhv", "hvh"]
+
+
+def arch_route(a, b, occupied, where, ea, eb, want=None):
+    """在网格上列出一条边所有不穿过节点的走法,每种是 (形状, (起点所在边, 终点所在边))。
+
+    同行、同列走直线;否则依次试 L 形(hv 先横后竖、vh 先竖后横)和 Z 形
+    (vhv 在起点下/上方的行间空隙里横穿、hvh 在起点右/左侧的列间空隙里竖穿)。
+    want 指定走法时只试那一种。
+    """
+    (c1, r1), (c2, r2) = a, b
+    if want is not None and (r1 == r2 or c1 == c2):
+        raise BuildError("%s「%s」→「%s」两端同行或同列,走直线,不用写 route" % (where, ea, eb))
+    if r1 == r2:
+        if any((c, r1) in occupied for c in between(c1, c2)):
+            raise BuildError("%s「%s」→「%s」同一行,但中间隔着别的节点;调整 at 空出一条通道" % (where, ea, eb))
+        return [("h", ("R", "L") if c2 > c1 else ("L", "R"))]
+    if c1 == c2:
+        if any((c1, r) in occupied for r in between(r1, r2)):
+            raise BuildError("%s「%s」→「%s」同一列,但中间隔着别的节点;调整 at 空出一条通道" % (where, ea, eb))
+        return [("v", ("B", "T") if r2 > r1 else ("T", "B"))]
+    h, v = ("R", "L") if c2 > c1 else ("L", "R"), ("B", "T") if r2 > r1 else ("T", "B")
+    tries = {
+        # 经过的格子;拐角格也算
+        "hv": ([(c, r1) for c in between(c1, c2)] + [(c2, r1)] + [(c2, r) for r in between(r1, r2)], (h[0], v[1])),
+        "vh": ([(c1, r) for r in between(r1, r2)] + [(c1, r2)] + [(c, r2) for c in between(c1, c2)], (v[0], h[1])),
+        "vhv": ([(c2, r) for r in between(r1, r2)], v),
+        "hvh": ([(c, r2) for c in between(c1, c2)], h),
+    }
+    ok = [(shape, tries[shape][1]) for shape in ([want] if want else ROUTES)
+          if not any(p in occupied for p in tries[shape][0])]
+    if ok:
+        return ok
+    if want:
+        raise BuildError("%s「%s」→「%s」按 route %s 走会穿过别的节点;换一种 route 或调整 at" % (where, ea, eb, want))
+    raise BuildError("%s「%s」→「%s」所有折线走法都会穿过别的节点;调整 at,让两端同行、同列,或空出拐角" % (where, ea, eb))
+
+
+def simplify(pts):
+    """去掉重复点和共线的中间点。"""
+    out = []
+    for p in pts:
+        if out and p == out[-1]:
+            continue
+        if len(out) >= 2 and (out[-2][0] == out[-1][0] == p[0] or out[-2][1] == out[-1][1] == p[1]):
+            out[-1] = p
+            continue
+        out.append(p)
+    return out
+
+
+def hop_path(pts, cuts):
+    """把折线点列写成 path;cuts[i] 是第 i 段上要跨过去的交叉点坐标。"""
+    d = ["M%g %g" % pts[0]]
+    for i in range(1, len(pts)):
+        (x0, y0), (x1, y1) = pts[i - 1], pts[i]
+        horiz = y0 == y1
+        sign = 1 if (x1 > x0 if horiz else y1 > y0) else -1
+        for t in sorted(cuts.get(i - 1, []), key=lambda t: t * sign):
+            if horiz:
+                d.append("L%g %g A%d %d 0 0 %d %g %g" % (t - sign * A_HOP, y0, A_HOP, A_HOP, 1 if sign > 0 else 0, t + sign * A_HOP, y0))
+            else:
+                d.append("L%g %g A%d %d 0 0 %d %g %g" % (x0, t - sign * A_HOP, A_HOP, A_HOP, 1 if sign > 0 else 0, x0, t + sign * A_HOP))
+        d.append("L%g %g" % (x1, y1))
+    return " ".join(d)
+
+
+def arch_svg(spec, nodes, zones, edges, key, ctx, where, cid):
+    """按 key("at" 桌面 / "m" 手机)给出的网格坐标排版,返回 (svg, 画布宽)。"""
+    # 空行空列压掉,只保留先后顺序
+    cmap = {c: i for i, c in enumerate(sorted({n[key][0] for n in nodes}))}
+    rmap = {r: i for i, r in enumerate(sorted({n[key][1] for n in nodes}))}
+    pos = {n["id"]: (cmap[n[key][0]], rmap[n[key][1]]) for n in nodes}
+    occupied = {}
+    for n in nodes:
+        if pos[n["id"]] in occupied:
+            raise BuildError("%s「%s」和「%s」的 %s 都是 %s" % (where, occupied[pos[n["id"]]]["name"], n["name"], key, list(pos[n["id"]])))
+        occupied[pos[n["id"]]] = n
+    ncol = max(p[0] for p in pos.values()) + 1
+    nrow = max(p[1] for p in pos.values()) + 1
+
+    # 分组外框 = 成员节点的格子范围;框里不能有别的节点,框和框不能重叠
+    box = {}
+    for z in zones:
+        cells = [pos[n["id"]] for n in nodes if n.get("zone") == z["id"]]
+        if not cells:
+            continue
+        c0, c1 = min(c for c, _ in cells), max(c for c, _ in cells)
+        r0, r1 = min(r for _, r in cells), max(r for _, r in cells)
+        for (c, r), n in occupied.items():
+            if c0 <= c <= c1 and r0 <= r <= r1 and n.get("zone") != z["id"]:
+                raise BuildError("%s「%s」落在分组「%s」的框里但不属于它;调整 %s,让每个分组占一块连续的矩形"
+                                 % (where, n["name"], z["name"], key))
+        for zid, (a0, a1, b0, b1) in box.items():
+            if a0 <= c1 and c0 <= a1 and b0 <= r1 and r0 <= b1:
+                raise BuildError("%s 分组「%s」和「%s」的框重叠了;调整 %s" % (where, zones_by_id(zones)[zid]["name"], z["name"], key))
+        box[z["id"]] = (c0, c1, r0, r1)
+
+    # 网格上列出每条边的可行走法,再挑重叠最少、交叉最少、拐弯最少的组合
+    options = [arch_route(pos[e["from"]], pos[e["to"]], occupied, where, e["_a"]["name"], e["_b"]["name"], e.get("route"))
+               for e in edges]
+
+    def segs(pts):
+        return [(pts[j], pts[j + 1]) for j in range(len(pts) - 1)]
+
+    def geometry(routes):
+        # 列宽、行高、间距
+        sub_any = any(n.get("sub") for n in nodes)
+        H = A_H2 if sub_any else A_H1
+        colw = [A_MINW] * ncol
+        for n in nodes:
+            c = pos[n["id"]][0]
+            colw[c] = max(colw[c], int(math.ceil(max(text_w(n["name"], 15), text_w(n.get("sub") or "", 13)) + 2 * A_PAD)))
+        # 分组标题要能放进第一列中线左边,从顶上居中进框的线才不会压到它
+        zmap_ = zones_by_id(zones)
+        for zid, bx in box.items():
+            colw[bx[0]] = max(colw[bx[0]], int(math.ceil(2 * (text_w(zmap_[zid]["name"], 14) + 26 - A_ZPAD))))
+
+        def zgap(i, lo_ix, hi_ix, axis_top=False):
+            ends = sum(1 for bx in box.values() if bx[hi_ix] == i)
+            starts = sum(1 for bx in box.values() if bx[lo_ix] == i + 1)
+            if not (ends or starts):
+                return 0, 0
+            return ends * A_ZPAD + starts * (A_ZTOP if axis_top else A_ZPAD) + A_ZGAP, ends + starts
+
+        cgap = []
+        for c in range(ncol - 1):
+            g, k = zgap(c, 0, 1)
+            g = max(A_CGAP, g)
+            for e, (shape, _) in zip(edges, routes):
+                if shape == "h" and e.get("label") and sorted((pos[e["from"]][0], pos[e["to"]][0])) == [c, c + 1]:
+                    g = max(g, int(math.ceil(text_w(e["label"], 13))) + 24 + k * A_ZPAD)
+            cgap.append(g)
+        rgap = []
+        for r in range(nrow - 1):
+            g = max(A_RGAP, zgap(r, 2, 3, True)[0])
+            for e, (shape, _) in zip(edges, routes):
+                if shape == "v" and e.get("label") and sorted((pos[e["from"]][1], pos[e["to"]][1])) == [r, r + 1]:
+                    # 竖线旁的标签要落在两个分组框之间的空白里,不压框线和分组标题
+                    g = max(g, sum(A_ZPAD for bx in box.values() if bx[3] == r)
+                            + sum(A_ZTOP for bx in box.values() if bx[2] == r + 1) + 28)
+            rgap.append(g)
+        x0 = A_EDGE + (A_ZPAD if any(bx[0] == 0 for bx in box.values()) else 0)
+        y0 = A_EDGE + (A_ZTOP if any(bx[2] == 0 for bx in box.values()) else 0)
+        xs, ys = [x0], [y0]
+        for c in range(ncol - 1):
+            xs.append(xs[-1] + colw[c] + cgap[c])
+        for r in range(nrow - 1):
+            ys.append(ys[-1] + H + rgap[r])
+
+        def rect(nid):
+            c, r = pos[nid]
+            return xs[c], ys[r], colw[c], H
+
+        def free_span(i, axis):
+            """第 i 和 i+1 列(axis=0)或行(axis=1)之间、去掉分组框内边距和标题区以后的空白。"""
+            if axis == 0:
+                lo = xs[i] + colw[i] + (A_ZPAD if any(bx[1] == i for bx in box.values()) else 0)
+                hi = xs[i + 1] - (A_ZPAD if any(bx[0] == i + 1 for bx in box.values()) else 0)
+            else:
+                lo = ys[i] + H + (A_ZPAD if any(bx[3] == i for bx in box.values()) else 0)
+                hi = ys[i + 1] - (A_ZTOP if any(bx[2] == i + 1 for bx in box.values()) else 0)
+            return lo, hi
+
+        # Z 形线在起点旁边的空隙里穿行;同一条空隙里有几根就均匀错开
+        channel, lanes = {}, {}
+        for i, (e, (shape, _)) in enumerate(zip(edges, routes)):
+            (c1, r1), (c2, r2) = pos[e["from"]], pos[e["to"]]
+            if shape == "vhv":
+                channel[i] = (1, r1 if r2 > r1 else r1 - 1)
+            elif shape == "hvh":
+                channel[i] = (0, c1 if c2 > c1 else c1 - 1)
+            else:
+                continue
+            lanes.setdefault(channel[i], []).append(i)
+        lane_at = {}
+        for (axis, gi), lst in lanes.items():
+            lo, hi = free_span(gi, axis)
+            for k, i in enumerate(lst):
+                lane_at[i] = round(lo + (hi - lo) * (k + 1) / (len(lst) + 1), 1)
+
+        # 同一条边上挂多根线时均匀错开端口,按另一端的位置排序,减少交叉
+        ports = {}
+        for i, (e, (_, (sa, sb))) in enumerate(zip(edges, routes)):
+            ports.setdefault((e["from"], sa), []).append((i, e["to"]))
+            ports.setdefault((e["to"], sb), []).append((i, e["from"]))
+        port_at = {}
+        for (nid, side), lst in ports.items():
+            x, y, w, h = rect(nid)
+            if side in "LR":
+                lst.sort(key=lambda t: (pos[t[1]][1], pos[t[1]][0]))
+                for k, (i, _) in enumerate(lst):
+                    port_at[(i, nid)] = (x if side == "L" else x + w, round(y + h * (k + 1) / (len(lst) + 1), 1), side)
+            else:
+                lst.sort(key=lambda t: (pos[t[1]][0], pos[t[1]][1]))
+                for k, (i, _) in enumerate(lst):
+                    port_at[(i, nid)] = (round(x + w * (k + 1) / (len(lst) + 1), 1), y if side == "T" else y + h, side)
+
+        def nudge(p, gap=2):
+            """端点离节点留 2px,箭头尖不压边框。"""
+            x, y, side = p
+            return {"L": (x - gap, y), "R": (x + gap, y), "T": (x, y - gap), "B": (x, y + gap)}[side]
+
+        lines = []
+        for i, (e, (shape, (sa, sb))) in enumerate(zip(edges, routes)):
+            pa, pb = port_at[(i, e["from"])], port_at[(i, e["to"])]
+            na, nb = len(ports[(e["from"], sa)]), len(ports[(e["to"], sb)])
+            if shape in ("h", "v"):
+                k = 1 if shape == "h" else 0   # 横线对齐 y,竖线对齐 x
+                if pa[k] != pb[k]:
+                    if nb == 1:
+                        pb = tuple(pa[k] if j == k else pb[j] for j in range(3))
+                    elif na == 1:
+                        pa = tuple(pb[k] if j == k else pa[j] for j in range(3))
+                A, B = nudge(pa), nudge(pb)
+                if A[k] == B[k]:
+                    pts = [A, B]
+                elif shape == "h":
+                    xm = round((A[0] + B[0]) / 2, 1)
+                    pts = [A, (xm, A[1]), (xm, B[1]), B]
+                else:
+                    ym = round((A[1] + B[1]) / 2, 1)
+                    pts = [A, (A[0], ym), (B[0], ym), B]
+            elif shape == "hv":
+                A, B = nudge(pa), nudge(pb)
+                pts = [A, (B[0], A[1]), B]
+            elif shape == "vh":
+                A, B = nudge(pa), nudge(pb)
+                pts = [A, (A[0], B[1]), B]
+            elif shape == "vhv":
+                A, B, m = nudge(pa), nudge(pb), lane_at[i]
+                pts = [A, (A[0], m), (B[0], m), B]
+            else:
+                A, B, m = nudge(pa), nudge(pb), lane_at[i]
+                pts = [A, (m, A[1]), (m, B[1]), B]
+            lines.append(simplify(pts))
+
+        # 线和线:共线重叠要警告;十字交叉时后画的那条跨小弧
+        cuts, overlaps = [dict() for _ in lines], []
+        for i, pi in enumerate(lines):
+            for j in range(i):
+                for si, (p, q) in enumerate(segs(pi)):
+                    for (u, v) in segs(lines[j]):
+                        ph, uh = p[1] == q[1], u[1] == v[1]
+                        if ph == uh:
+                            a_ = 1 if ph else 0
+                            if p[a_] == u[a_] and min(max(p[1 - a_], q[1 - a_]), max(u[1 - a_], v[1 - a_])) - max(min(p[1 - a_], q[1 - a_]), min(u[1 - a_], v[1 - a_])) > 0:
+                                overlaps.append((i, j))
+                            continue
+                        h1, h2, vv1, vv2 = (p, q, u, v) if ph else (u, v, p, q)
+                        X, Y = vv1[0], h1[1]
+                        if (min(h1[0], h2[0]) + A_HOP < X < max(h1[0], h2[0]) - A_HOP
+                                and min(vv1[1], vv2[1]) + A_HOP < Y < max(vv1[1], vv2[1]) - A_HOP):
+                            cuts[i].setdefault(si, []).append(X if ph else Y)
+
+        score = len(overlaps) * 1000 + sum(len(c) for cut in cuts for c in cut.values()) * 10 + sum(len(p) - 2 for p in lines)
+        return dict(xs=xs, ys=ys, colw=colw, H=H, lines=lines, cuts=cuts, overlaps=overlaps, score=score,
+                    free_span=free_span, routes=routes)
+
+    pick = [0] * len(edges)
+    g = geometry([o[0] for o in options])
+    for _ in range(2):
+        for i, opts in enumerate(options):
+            for k in range(len(opts)):
+                if k == pick[i]:
+                    continue
+                trial = pick[:i] + [k] + pick[i + 1:]
+                t = geometry([o[j] for o, j in zip(options, trial)])
+                if t["score"] < g["score"]:
+                    pick, g = trial, t
+    xs, ys, colw, H, lines, cuts, routes, free_span = (g[k] for k in ("xs", "ys", "colw", "H", "lines", "cuts", "routes", "free_span"))
+    for i, j in g["overlaps"]:
+        ctx.warn("%s「%s」→「%s」和「%s」→「%s」的线有一段重叠;调整 at 或用 route 换走法"
+                 % (where, edges[i]["_a"]["name"], edges[i]["_b"]["name"], edges[j]["_a"]["name"], edges[j]["_b"]["name"]))
+
+    def rect(nid):
+        c, r = pos[nid]
+        return xs[c], ys[r], colw[c], H
+
+    W = xs[-1] + colw[-1] + (A_ZPAD if any(bx[1] == ncol - 1 for bx in box.values()) else 0) + A_EDGE
+    Ht = ys[-1] + H + (A_ZPAD if any(bx[3] == nrow - 1 for bx in box.values()) else 0) + A_EDGE
+    label = spec.get("label") or spec["caption"]
+    out = ['<svg viewBox="0 0 %d %d" style="max-width:%dpx" role="img" aria-label="%s">' % (W, Ht, W, esc(label))]
+
+    colors = sorted({e.get("flow") or "" for e in edges})
+    out.append("<defs>")
+    for f in colors:
+        out.append('<marker id="%s-ah%s" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" '
+                   'markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M2 1.5 9 5 2 8.5" class="a-ah" '
+                   'style="stroke:var(%s)"/></marker>' % (cid, f, FLOWS.get(f, "--a-line")))
+    out.append("</defs>")
+
+    zmap = zones_by_id(zones)
+    for zid, (c0, c1, r0, r1) in box.items():
+        bx, by = xs[c0] - A_ZPAD, ys[r0] - A_ZTOP
+        bw, bh = xs[c1] + colw[c1] + A_ZPAD - bx, ys[r1] + H + A_ZPAD - by
+        # 从顶上进框的竖线会穿过分组标题:标题往右挪到线的右边
+        tw = text_w(zmap[zid]["name"], 14)
+        lx = bx + 16
+        for x_ in sorted(p[0] for pts in lines for p, q in segs(pts)
+                         if p[0] == q[0] and min(p[1], q[1]) < by + A_ZTOP and max(p[1], q[1]) > by):
+            if lx - 8 < x_ < lx + tw + 8:
+                lx = x_ + 10
+        if lx + tw > bx + bw - 8:
+            ctx.warn("%s 分组「%s」的标题被进框的线挡住了;调整 at 或缩短分组名" % (where, zmap[zid]["name"]))
+        out.append('<g class="a-z"><rect x="%g" y="%g" width="%g" height="%g" rx="12"/><text x="%g" y="%g">%s</text></g>'
+                   % (bx, by, bw, bh, lx, by + 25, esc(zmap[zid]["name"])))
+
+    for i, (e, pts) in enumerate(zip(edges, lines)):
+        f = e.get("flow") or ""
+        attrs = ' marker-end="url(#%s-ah%s)"' % (cid, f)
+        if e.get("both"):
+            attrs += ' marker-start="url(#%s-ah%s)"' % (cid, f)
+        style = "stroke:var(%s)" % FLOWS.get(f, "--a-line")
+        out.append('<path class="a-e%s" d="%s" style="%s"%s/>' % (" dash" if e.get("dash") else "", hop_path(pts, cuts[i]), style, attrs))
+
+    def free_mid(i, axis):
+        return sum(free_span(i, axis)) / 2
+
+    for e, pts, (shape, _) in zip(edges, lines, routes):
+        if not e.get("label"):
+            continue
+        (p, q) = max(segs(pts), key=lambda s: abs(s[0][0] - s[1][0]) + abs(s[0][1] - s[1][1]))
+        if p[1] == q[1]:
+            a_, b_ = sorted((pos[e["from"]][0], pos[e["to"]][0]))
+            mx = free_mid(a_, 0) if shape == "h" and b_ - a_ == 1 else (p[0] + q[0]) / 2
+            out.append('<text class="a-lab" x="%g" y="%g" text-anchor="middle">%s</text>' % (mx, p[1] - 8, esc(e["label"])))
+        else:
+            a_, b_ = sorted((pos[e["from"]][1], pos[e["to"]][1]))
+            my = free_mid(a_, 1) if shape == "v" and b_ - a_ == 1 else (p[1] + q[1]) / 2
+            out.append('<text class="a-lab" x="%g" y="%g" dominant-baseline="central">%s</text>' % (p[0] + 8, my, esc(e["label"])))
+
+    for n in nodes:
+        x, y, w, h = rect(n["id"])
+        cx, cy = x + w / 2, y + h / 2
+        t = ('<text class="t" x="%g" y="%g">%s</text><text class="s" x="%g" y="%g">%s</text>'
+             % (cx, cy - 10, esc(n["name"]), cx, cy + 11, esc(n["sub"])) if n.get("sub")
+             else '<text class="t" x="%g" y="%g">%s</text>' % (cx, cy, esc(n["name"])))
+        out.append('<g class="a-n t-%s"><rect x="%g" y="%g" width="%g" height="%g" rx="6"/>%s</g>' % (n["_tone"], x, y, w, h, t))
+    out.append("</svg>")
+    return "".join(out), W
+
+
+def zones_by_id(zones):
+    return {z["id"]: z for z in zones}
+
+
+def arch_legend(legend):
+    items = []
+    for k, text in legend.items():
+        if k == "dash":
+            mark = '<svg width="28" height="10" aria-hidden="true"><line x1="1" y1="5" x2="27" y2="5" class="a-e dash" style="stroke:var(--a-line)"/></svg>'
+        elif k in FLOWS:
+            mark = '<svg width="28" height="10" aria-hidden="true"><line x1="1" y1="5" x2="27" y2="5" class="a-e" style="stroke:var(%s)"/></svg>' % FLOWS[k]
+        else:
+            mark = '<svg width="20" height="14" aria-hidden="true" class="a-n t-%s"><rect x="0.5" y="0.5" width="19" height="13" rx="3"/></svg>' % k
+        items.append("<span>%s%s</span>" % (mark, esc(text)))
+    return '<div class="a-legend">%s</div>' % "".join(items)
+
+
+def render_arch(spec, ctx, where, cid):
+    need(spec, ["caption", "nodes"], where)
+    zones = as_list(spec.get("zones") or [], where, "zones", nonempty=False)
+    zmap = {}
+    for z in zones:
+        need(z, ["id", "name"], where + " 的某个分组")
+        if z["id"] in zmap:
+            raise BuildError("%s 分组 id「%s」重复了" % (where, z["id"]))
+        if z.get("tone") is not None:
+            pick_enum(z["tone"], TONES, where, "分组「%s」的 tone" % z["name"])
+        zmap[z["id"]] = z
+    nodes = as_list(spec["nodes"], where, "nodes")
+    nmap = {}
+    for n in nodes:
+        need(n, ["id", "name", "at"], where + " 的某个节点")
+        if n["id"] in nmap:
+            raise BuildError("%s 节点 id「%s」重复了" % (where, n["id"]))
+        n["at"] = cell_of(n["at"], where, "「%s」的 at" % n["name"])
+        if n.get("m") is not None:
+            n["m"] = cell_of(n["m"], where, "「%s」的 m" % n["name"])
+        if n.get("zone") is not None and n["zone"] not in zmap:
+            raise BuildError("%s「%s」的 zone「%s」没有在 zones 里声明" % (where, n["name"], n["zone"]))
+        if n.get("tone") is not None:
+            pick_enum(n["tone"], TONES, where, "「%s」的 tone" % n["name"])
+        n["_tone"] = n.get("tone") or (zmap[n["zone"]].get("tone") if n.get("zone") else None) or "gray"
+        nmap[n["id"]] = n
+    has_m = [n for n in nodes if n.get("m") is not None]
+    if has_m and len(has_m) != len(nodes):
+        raise BuildError("%s 只有部分节点写了 m(手机版坐标);要么都写,要么都不写" % where)
+    legend = as_obj(spec.get("legend") or {}, where, "legend")
+    for k in legend:
+        pick_enum(k, LEGEND_KEYS, where, "legend 的键")
+    edges = as_list(spec.get("edges") or [], where, "edges", nonempty=False)
+    for e in edges:
+        need(e, ["from", "to"], where + " 的某条连线")
+        for end in ("from", "to"):
+            if e[end] not in nmap:
+                raise BuildError("%s 连线的 %s「%s」不是已声明的节点 id" % (where, end, e[end]))
+        if e["from"] == e["to"]:
+            raise BuildError("%s 连线「%s」→「%s」首尾是同一个节点" % (where, e["from"], e["to"]))
+        if e.get("flow") is not None:
+            pick_enum(e["flow"], list(FLOWS), where, "连线的 flow")
+        if e.get("route") is not None:
+            pick_enum(e["route"], ROUTES, where, "连线的 route")
+        e["_a"], e["_b"] = nmap[e["from"]], nmap[e["to"]]
+        if e.get("label") and text_w(e["label"], 13) > 90:
+            ctx.warn("%s「%s」→「%s」的线上标签「%s」太长;线上只写协议、端口这类短词,解释写进 caption"
+                     % (where, e["_a"]["name"], e["_b"]["name"], e["label"]))
+
+    # 图里有含义的线型、颜色都要在图例里
+    if any(e.get("dash") for e in edges) and "dash" not in legend:
+        ctx.warn('%s 用了虚线,但 legend 里没写 "dash" 的含义' % where)
+    for f in sorted({e["flow"] for e in edges if e.get("flow")}):
+        if f not in legend:
+            ctx.warn('%s 用了 flow「%s」,但 legend 里没写它的含义' % (where, f))
+    for n in nodes:
+        zt = zmap[n["zone"]].get("tone") if n.get("zone") else None
+        if n["_tone"] != (zt or "gray") and n["_tone"] not in legend:
+            ctx.warn("%s「%s」的颜色 %s 和所在分组不同,legend 里要写 %s 表示什么" % (where, n["name"], n["_tone"], n["_tone"]))
+
+    for z in zones:
+        if not any(n.get("zone") == z["id"] for n in nodes):
+            ctx.warn("%s 分组「%s」没有节点,不画" % (where, z["name"]))
+
+    desk, W = arch_svg(spec, nodes, zones, edges, "at", ctx, where, cid)
+    out = ['<figure class="diagram arch">']
+    if has_m:
+        mob, _ = arch_svg(spec, nodes, zones, edges, "m", ctx, where + "(手机版)", cid + "m")
+        out.append(desk.replace("<svg ", '<svg class="only-desktop" ', 1))
+        out.append(mob.replace("<svg ", '<svg class="only-mobile" ', 1))
+    elif W > 440:
+        # 手机上缩到 0.8 倍以下字就太小了:改成横滑,并提示补手机版坐标
+        out.append('<div class="scroll-x">%s</div>' % desk.replace(
+            'style="max-width:%dpx"' % W, 'style="max-width:%dpx;min-width:%dpx"' % (W, int(W * 0.8)), 1))
+        ctx.warn("%s 宽 %dpx,手机上要横滑;给每个节点加 m(手机版坐标)排成纵向更好读" % (where, W))
+    else:
+        out.append(desk)
+    if legend:
+        out.append(arch_legend(legend))
+    out.append("<figcaption>%s</figcaption></figure>" % esc(spec["caption"]))
+    return "".join(out)
+
+
+RENDER = {"entities": render_entities, "stat": render_stat, "bar": render_bar, "line": render_line,
+          "table": render_table, "arch": render_arch}
 # 写错字段类型时渲染函数可能抛出的异常,统一转成带位置的 BuildError
 SHAPE_ERRORS = (TypeError, ValueError, KeyError, AttributeError, IndexError, ZeroDivisionError)
 
