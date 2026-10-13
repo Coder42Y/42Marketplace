@@ -121,7 +121,7 @@ git -C ~/42Marketplace pull --ff-only
 通用格式不代表没有外部依赖；请以各技能 README 的兼容性和前置条件为准。
 
 - 🎨 [design-html](./skills/design-html/) — 把 idea 沉淀成 Anthropic 暖色风设计说明 HTML。
-- 🗓️ [daily-report](./skills/daily-report/) — **Claude Code**：把一天的 session 整理成能在例会上直接念的汇报 HTML，先对齐大纲再写。`beta`
+- 🗓️ [daily-report](./skills/daily-report/) — 把一天的 session 整理成能在例会上直接念的汇报 HTML，先对齐大纲再写。`beta`
 - ✍️ [zhihu-notes](./skills/zhihu-notes/) — 知乎风格长文生成。
 - 🌺 [elder-blessing-comments](./skills/elder-blessing-comments/) — 长辈风祝福文案。
 - 🔀 [submit-gitlab-mr](./skills/submit-gitlab-mr/) — GitLab MR 提交，需要 glab CLI。
