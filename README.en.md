@@ -106,6 +106,7 @@ After installation, use natural-language requests:
 “Explain LeetCode 300, longest increasing subsequence” → algo-solver
 “Make Xiaohongshu cards from this article”            → xhs-image-gen
 “Submit an MR for me”                                → submit-gitlab-mr
+“Write up today's standup report”                     → daily-report
 ```
 
 ## Skills
@@ -120,6 +121,7 @@ After installation, use natural-language requests:
 A shared format does not mean zero dependencies. Check each skill's README for compatibility and prerequisites.
 
 - 🎨 [design-html](./skills/design-html/) — Turn an idea into an Anthropic warm-tone design HTML document.
+- 🗓️ [daily-report](./skills/daily-report/) — **Claude Code**: turn a day of sessions into a standup report HTML you can read out in the meeting; agrees on the outline before writing. Output is in Chinese. `beta`
 - ✍️ [zhihu-notes](./skills/zhihu-notes/) — Generate Zhihu-style long-form articles.
 - 🌺 [elder-blessing-comments](./skills/elder-blessing-comments/) — Generate elder-style Chinese blessing comments.
 - 🔀 [submit-gitlab-mr](./skills/submit-gitlab-mr/) — Submit GitLab merge requests with glab CLI.

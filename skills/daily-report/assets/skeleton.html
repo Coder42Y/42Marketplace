@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>&lt;项目&gt;-每日例会-YYYY-MM-DD</title>
+<style>
+:root {
+  --bg: #fbf9f5; --panel: #ffffff; --panel-2: #f3f1ec; --border: #dcd9d0;
+  --text: #1b1b1b; --text-2: #6b6964; --text-3: #73706a;
+  --accent: #184ea4; --accent-soft: #dfe6e8;
+  --ok: #2f7a4a; --warn: #9a6212; --bad: #b3362e;
+  --grid: #e8e6e0; --axis: #9c9990; --rule: #1b1b1b;
+  --hl: #dfe6e8;
+  --blue: #184ea4; --blue-lt: #89a9dc; --blue-ink: #184ea4;
+  --green: #109d7b; --green-ink: #0c7b60;
+  --orange: #c67625; --orange-lt: #cb9d78; --orange-ink: #a55f16;
+  --violet: #a378c5; --violet-ink: #895faa;
+  --gray: #9c9990;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body {
+  font-family: -apple-system, "PingFang SC", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  font-size: 16px; line-height: 1.7;
+}
+main { max-width: 880px; margin: 0 auto; padding: 40px 16px 64px; }
+h1 { font-size: 26px; line-height: 1.3; margin: 0 0 4px; }
+.meta { color: var(--text-2); font-size: 14px; margin: 0 0 28px; }
+h2 { font-size: 20px; margin: 44px 0 6px; padding-top: 20px; border-top: 1px solid var(--border); }
+h2 .tag { font-size: 13px; font-weight: 500; color: var(--text-2); margin-left: 8px; }
+h3 { font-size: 17px; margin: 28px 0 6px; }
+h4 { font-size: 15px; margin: 16px 0 4px; }
+p { margin: 8px 0; }
+ul { margin: 6px 0; padding-left: 20px; }
+li { margin: 4px 0; }
+code { font-family: inherit; font-size: 0.92em; background: var(--panel-2); padding: 0 4px; overflow-wrap: anywhere; }
+.lead {
+  font-size: 18px; line-height: 1.6; margin: 0 0 24px;
+  padding: 16px 18px; background: var(--panel); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+}
+.muted { color: var(--text-2); }
+.small { font-size: 14px; }
+
+/* number cards */
+.cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 8px 0 4px; }
+.card { background: var(--panel); border: 1px solid var(--border); padding: 14px 16px; }
+.card .n { font-size: 30px; font-weight: 600; line-height: 1.1; }
+.card .l { font-size: 14px; margin-top: 6px; }
+.card .s { font-size: 13px; color: var(--text-2); }
+@media (max-width: 640px) { .cards { grid-template-columns: repeat(2, 1fr); } }
+
+figure { margin: 18px 0 8px; }
+figcaption.top { margin-bottom: 10px; }
+figcaption .t { font-weight: 600; }
+figcaption .c { font-size: 13px; color: var(--text-2); }
+figcaption.below { font-size: 14px; color: var(--text-2); margin-top: 8px; }
+
+/* timeline */
+.tl-row { display: grid; grid-template-columns: 170px 1fr; align-items: center; min-height: 40px; }
+.tl-name { font-size: 14px; line-height: 1.35; padding-right: 10px; }
+.tl-name .sub { display: block; font-size: 12px; color: var(--text-2); }
+.tl-track { position: relative; height: 40px; }
+.tl-grid { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--grid); }
+.tl-bar { position: absolute; top: 11px; height: 18px; }
+.tl-bar.done { background: var(--blue); }
+.tl-bar.doing { background: var(--orange); }
+.tl-bar .lbl { position: absolute; right: calc(100% + 6px); top: -1px; font-size: 12px; white-space: nowrap; }
+.tl-axis { display: grid; grid-template-columns: 170px 1fr; }
+.tl-ticks { position: relative; height: 22px; border-top: 1px solid var(--axis); }
+.tl-ticks span { position: absolute; top: 2px; font-size: 12px; color: var(--text-3); transform: translateX(-50%); }
+@media (max-width: 640px) {
+  .tl-row, .tl-axis { grid-template-columns: 112px 1fr; }
+  .tl-name { font-size: 13px; }
+}
+
+/* steps */
+.steps { display: grid; grid-template-columns: repeat(6, 1fr); margin: 12px 0; }
+.step { border: 1px solid var(--border); border-right: none; background: var(--panel); padding: 10px; font-size: 14px; line-height: 1.45; }
+.step:last-child { border-right: 1px solid var(--border); }
+.step .k { font-size: 12px; color: var(--ok); font-weight: 600; }
+.step .d { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+@media (max-width: 640px) {
+  .steps { grid-template-columns: 1fr 1fr; }
+  .step { border-right: 1px solid var(--border); border-bottom: none; }
+  .step:nth-child(odd) { border-right: none; }
+  .step:nth-last-child(-n+2) { border-bottom: 1px solid var(--border); }
+}
+
+.svg-wrap { overflow-x: auto; }
+.svg-wrap svg { width: 100%; height: auto; min-width: 640px; display: block; }
+
+/* tech notes */
+.tech { border-left: 2px solid var(--border); padding: 2px 0 2px 16px; margin: 12px 0 8px; font-size: 15px; }
+.tech > .label { font-size: 12px; font-weight: 600; color: var(--text-2); letter-spacing: 0.04em; }
+.tech ul { padding-left: 18px; }
+.tech li { margin: 5px 0; }
+.tech h4:first-of-type { margin-top: 6px; }
+
+/* tables */
+.tbl-wrap { overflow-x: auto; margin: 10px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; line-height: 1.5; background: var(--panel); }
+th, td { border: 1px solid var(--rule); padding: 7px 10px; text-align: left; vertical-align: top; }
+th { background: var(--panel-2); font-weight: 600; }
+td .sub, th .sub { display: block; font-size: 12px; color: var(--text-2); font-weight: 400; }
+tbody tr:hover td { background: var(--panel-2); }
+.who { display: inline-block; font-size: 12px; padding: 0 6px; border: 1px solid currentColor; white-space: nowrap; line-height: 20px; }
+.who.sys { color: var(--blue-ink); }
+.who.mix { color: var(--violet-ink); }
+.who.llm { color: var(--orange-ink); }
+.lock { font-size: 12px; color: var(--text-2); white-space: nowrap; }
+table.report td:first-child { white-space: nowrap; }
+table.specs td:first-child { white-space: nowrap; }
+
+/* items */
+.item { padding: 14px 0; border-bottom: 1px solid var(--border); }
+.item:last-child { border-bottom: none; }
+.item .h { font-weight: 600; }
+.pill { display: inline-block; font-size: 12px; padding: 0 8px; border: 1px solid currentColor; margin-left: 6px; vertical-align: 2px; line-height: 20px; }
+.pill.ok { color: var(--ok); }
+.pill.warn { color: var(--warn); }
+.box { background: var(--panel-2); padding: 12px 16px; margin: 12px 0; }
+
+/* run flow chips */
+.flow-chips { display: flex; flex-wrap: wrap; gap: 6px 0; margin: 8px 0; font-size: 13px; }
+.flow-chips span { background: var(--panel); border: 1px solid var(--border); padding: 2px 8px; }
+.flow-chips i { font-style: normal; color: var(--text-2); padding: 2px 6px; }
+
+/* bar chart (horizontal) */
+.hbar { margin: 6px 0 4px; }
+.hbar-row { display: grid; grid-template-columns: 150px 1fr; align-items: center; min-height: 40px; }
+.hbar-name { font-size: 14px; line-height: 1.35; padding-right: 10px; }
+.hbar-name .sub { display: block; font-size: 12px; color: var(--text-2); }
+.hbar-track { position: relative; height: 22px; border-left: 1px solid var(--rule); }
+.hbar-fill { position: absolute; left: 0; top: 0; bottom: 0; }
+.hbar-val { position: absolute; top: 0; font-size: 13px; font-weight: 600; white-space: nowrap; line-height: 22px; }
+@media (max-width: 640px) { .hbar-row { grid-template-columns: 104px 1fr; } }
+
+/* before / after */
+.ba { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 10px 0; }
+.ba > div { background: var(--panel); border: 1px solid var(--border); padding: 12px 14px; font-size: 14px; }
+.ba .t { font-weight: 600; margin-bottom: 6px; }
+.ba .row { margin: 4px 0; }
+.ba .v { font-family: inherit; background: var(--panel-2); padding: 0 4px; overflow-wrap: anywhere; }
+.ba .bad { color: var(--bad); font-weight: 600; }
+.ba .good { color: var(--ok); font-weight: 600; }
+@media (max-width: 640px) { .ba { grid-template-columns: 1fr; } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .flow { stroke-dasharray: 6 5; animation: dash 1.6s linear infinite; }
+  @keyframes dash { to { stroke-dashoffset: -22; } }
+}
+</style>
+</head>
+<body>
+<main>
+<!--
+  daily-report 骨架。所有【】里的内容都要换成当天的真实内容；用不上的组件整块删掉。
+  写法见 references/style.md：白话层能直接念，技术说明层写到模块名、根因、取舍、数字。
+-->
+
+<h1>&lt;项目&gt;-每日例会-YYYY-MM-DD</h1>
+<p class="meta">【作者】 · YYYY-MM-DD（周X）· 今天在 【项目】 上跑了 N 个工作 session</p>
+
+<p class="lead">【开场一句话：今天的主线是什么，它现在是什么状态。】</p>
+
+<div class="cards">
+  <div class="card"><div class="n">2</div><div class="l">【个 PR 已合入】</div><div class="s">【编号或说明】</div></div>
+  <div class="card"><div class="n">1</div><div class="l">【个问题已修】</div><div class="s">【编号或说明】</div></div>
+  <div class="card"><div class="n">1</div><div class="l">【份文档 / 决定】</div><div class="s">【说明】</div></div>
+  <div class="card"><div class="n">1</div><div class="l">【条线进行中】</div><div class="s">【说明】</div></div>
+</div>
+
+<figure>
+  <figcaption class="top">
+    <div class="t">【时间线结论标题：今天的时间主要花在哪】</div>
+    <div class="c">按各 session 的实际活动时间画，当地时间。蓝色是已完成，橙色是还在进行。</div>
+  </figcaption>
+  <div id="tl"></div>
+</figure>
+
+<!-- ============ 做完了：主线 ============ -->
+<h2>做完了<span class="tag">主线：【一句话名字】</span></h2>
+
+<p>【白话 2–4 句：以前是什么样、今天改成什么样、为什么要改。不出现内部代号。】</p>
+
+<figure>
+  <div class="svg-wrap">
+  <svg viewBox="0 0 880 220" role="img" aria-label="【一句话概括这张图的看点】">
+    <rect x="16" y="40" width="200" height="104" fill="#ffffff" stroke="#dcd9d0"/>
+    <text x="32" y="72" font-size="16" font-weight="600" fill="#1b1b1b">【输入 / 来源】</text>
+    <text x="32" y="102" font-size="14" fill="#6b6964">【说明】</text>
+    <rect x="336" y="40" width="208" height="104" fill="#ffffff" stroke="#184ea4" stroke-width="1.5"/>
+    <text x="352" y="72" font-size="16" font-weight="600" fill="#1b1b1b">【今天改动的核心】</text>
+    <text x="352" y="102" font-size="14" fill="#6b6964">【说明】</text>
+    <rect x="664" y="40" width="200" height="104" fill="#ffffff" stroke="#dcd9d0"/>
+    <text x="680" y="72" font-size="16" font-weight="600" fill="#1b1b1b">【输出 / 结果】</text>
+    <text x="680" y="102" font-size="14" fill="#6b6964">【说明】</text>
+    <path class="flow" d="M216 92 H328" fill="none" stroke="#6f35a2" stroke-width="2.5"/>
+    <path d="M328 92 l-9 -5 v10 z" fill="#6f35a2"/>
+    <path class="flow" d="M544 92 H656" fill="none" stroke="#cc3143" stroke-width="2.5"/>
+    <path d="M656 92 l-9 -5 v10 z" fill="#cc3143"/>
+    <g font-size="13" font-weight="600" text-anchor="middle">
+      <circle cx="272" cy="92" r="11" fill="#fbf9f5" stroke="#6f35a2" stroke-width="1.5"/><text x="272" y="97" fill="#6f35a2">1</text>
+      <circle cx="600" cy="92" r="11" fill="#fbf9f5" stroke="#cc3143" stroke-width="1.5"/><text x="600" y="97" fill="#cc3143">2</text>
+    </g>
+    <g font-size="13" fill="#6b6964">
+      <line x1="16" y1="196" x2="44" y2="196" stroke="#6f35a2" stroke-width="2.5"/><text x="52" y="201">【输入流含义】</text>
+      <line x1="232" y1="196" x2="260" y2="196" stroke="#cc3143" stroke-width="2.5"/><text x="268" y="201">【输出流含义】</text>
+    </g>
+  </svg>
+  </div>
+  <figcaption class="below">① 【这一步发生了什么】　② 【这一步发生了什么】。画机制，不画名字：线要表示数据或流程真正怎么走。</figcaption>
+</figure>
+
+<h3>今天按这几步做完</h3>
+<div class="steps">
+  <div class="step"><div class="k">✓ 上午</div>【步骤】<div class="d">【一句说明】</div></div>
+  <div class="step"><div class="k">✓ 上午</div>【步骤】<div class="d">【一句说明】</div></div>
+  <div class="step"><div class="k">✓ 中午</div>【步骤】<div class="d">【一句说明】</div></div>
+  <div class="step"><div class="k">✓ 下午</div>【步骤】<div class="d">【一句说明】</div></div>
+  <div class="step"><div class="k">✓ 下午</div>【步骤】<div class="d">【一句说明】</div></div>
+  <div class="step"><div class="k">✓ 下午</div>【步骤】<div class="d">【一句说明】</div></div>
+</div>
+
+<h3>具体改了什么</h3>
+<div class="tech">
+  <div class="label">技术说明</div>
+  <h4>1. 【子主题】</h4>
+  <ul>
+    <li>【具体到模块 / 文件 / 函数名，用 <code>code</code> 包起来】</li>
+    <li><b>【为什么这样做】：</b>【设计取舍和理由】</li>
+    <li><b>影响范围：</b>【哪些受影响，哪些明确不受影响】</li>
+  </ul>
+</div>
+
+<!-- 有面向用户的产出（报告 / 页面 / 接口）时，用一张表讲清它的结构；没有就删掉 -->
+<figure>
+  <figcaption class="top">
+    <div class="t">【结论标题：这个产出的结构有什么特点】</div>
+    <div class="c">【来源和口径】</div>
+  </figcaption>
+  <div class="tbl-wrap">
+  <table class="report">
+    <thead><tr><th>部分</th><th>谁来写</th><th>内容</th></tr></thead>
+    <tbody>
+      <tr><td>【1 名称】</td><td><span class="who sys">系统</span></td><td>【内容】</td></tr>
+      <tr><td>【2 名称】</td><td><span class="who mix">系统 + 模型</span></td><td>【内容】</td></tr>
+      <tr><td>【3 名称】</td><td><span class="who llm">模型</span></td><td>【内容】</td></tr>
+    </tbody>
+  </table>
+  </div>
+</figure>
+
+<!-- 有数字才用这张柱状图；没有就删掉 -->
+<figure>
+  <figcaption class="top">
+    <div class="t">【结论标题：数字说明了什么】</div>
+    <div class="c">【口径：测的是什么、样本、条件】</div>
+  </figcaption>
+  <div class="hbar" id="hbar"></div>
+</figure>
+
+<div class="tech">
+  <div class="label">验证</div>
+  <ul>
+    <li>【新增多少测试；回归通过多少、失败多少，失败的是不是基线上本来就有的】</li>
+    <li>【实跑：模型、样本、耗时、结果】（调研类工作把这块标题改成「依据」，写结论来自哪些资料或实验）</li>
+  </ul>
+</div>
+
+<!-- ============ 做完了：顺手修的问题 ============ -->
+<h2>做完了<span class="tag">顺手修的问题</span></h2>
+
+<div class="item">
+  <div class="h">【问题的白话标题】<span class="pill ok">已合入 #【编号】</span></div>
+  <p>【白话 1–2 句：发生了什么、现在怎样。】</p>
+  <div class="ba">
+    <div>
+      <div class="t">以前</div>
+      <div class="row">【输入】：<span class="v">【值】</span></div>
+      <div class="row">【结果】：<span class="v">【值】</span> <span class="bad">【问题】</span></div>
+    </div>
+    <div>
+      <div class="t">现在</div>
+      <div class="row">【输入】：<span class="v">【值】</span></div>
+      <div class="row">【结果】：<span class="v">【值】</span> <span class="good">【改善】</span></div>
+    </div>
+  </div>
+  <div class="tech">
+    <div class="label">技术说明</div>
+    <ul>
+      <li><b>根因：</b>【写到机制那一层】</li>
+      <li><b>改法：</b>【改了哪里、怎么改】</li>
+      <li><b>测试：</b>【数字】</li>
+    </ul>
+  </div>
+</div>
+
+<div class="item">
+  <div class="h">【小事一句话】<span class="pill warn">已修，待开 PR</span></div>
+  <p>【一句白话就够，不用技术说明。】</p>
+</div>
+
+<!-- ============ 进行中 ============ -->
+<h2>进行中<span class="tag">【名字】</span></h2>
+<ul>
+  <li>【白话：在做什么】</li>
+  <li>【白话：做到哪了】</li>
+  <li>【白话：卡在什么 / 等什么】</li>
+</ul>
+
+<figure>
+  <figcaption class="top">
+    <div class="t">【结论标题】</div>
+    <div class="c">状态截至 【HH:MM】。</div>
+  </figcaption>
+  <div class="tbl-wrap">
+  <table class="specs">
+    <thead><tr><th>任务</th><th>做什么</th><th>状态</th></tr></thead>
+    <tbody>
+      <tr><td>【任务】<span class="sub">【批次】</span></td><td>【做什么】</td><td>【状态】</td></tr>
+    </tbody>
+  </table>
+  </div>
+</figure>
+
+<div class="tech">
+  <div class="label">技术说明</div>
+  <ul>
+    <li><b>【发现的问题 / 定下的决定】：</b>【具体内容和理由】</li>
+  </ul>
+</div>
+
+<!-- ============ 风险 ============ -->
+<h2>需要协调 / 风险</h2>
+<ul>
+  <li><b>【风险一句话】</b>【一两句说明。只写我们这边的；同事负责的事默认不写。】</li>
+</ul>
+
+<h2>明天</h2>
+<!-- 第二天是周末时改成「接下来」 -->
+<ul>
+  <li>【具体动作】</li>
+  <li>【具体动作】</li>
+  <li>【具体动作】</li>
+</ul>
+
+</main>
+
+<script>
+(function () {
+  // ---- timeline: times are local; the window is derived from rows, rounded out to whole hours.
+  // A session that runs past midnight: cut it at 24:00 (e.g. "23:59").
+  var rows = [
+    // one row per work line; st: done | doing; give in-progress rows lbl: "进行中"
+    { name: "工作线 A", sub: "09:30–11:00", s: "09:30", e: "11:00", st: "done" },
+    { name: "工作线 B", sub: "11:10–16:40", s: "11:10", e: "16:40", st: "done" },
+    { name: "工作线 C", sub: "16:50 起", s: "16:50", e: "17:30", st: "doing", lbl: "进行中" }
+  ];
+  function m(t) { var p = t.split(":"); return +p[0] * 60 + +p[1]; }
+  var lo = Math.min.apply(null, rows.map(function (r) { return m(r.s); }));
+  var hi = Math.max.apply(null, rows.map(function (r) { return m(r.e); }));
+  var start = Math.floor(lo / 60) * 60, end = Math.max(Math.ceil(hi / 60) * 60, start + 120);
+  var span = end - start, step = span > 8 * 60 ? 180 : span > 4 * 60 ? 120 : 60;
+  function pct(min) { return ((min - start) / span * 100).toFixed(2) + "%"; }
+  var grid = "", ticks = "";
+  for (var t = start; t <= end; t += step) {
+    if (t > start && t < end) grid += '<div class="tl-grid" style="left:' + pct(t) + '"></div>';
+    var align = t === start ? ';transform:none' : (t + step > end ? ';transform:translateX(-100%)' : '');
+    ticks += '<span style="left:' + pct(t) + align + '">' + Math.floor(t / 60) + ':00</span>';
+  }
+  var html = "";
+  rows.forEach(function (r) {
+    var w = (Math.max(m(r.e) - m(r.s), 5) / span * 100).toFixed(2) + "%";
+    html += '<div class="tl-row"><div class="tl-name">' + r.name + '<span class="sub">' + r.sub + '</span></div>' +
+      '<div class="tl-track">' + grid + '<div class="tl-bar ' + r.st + '" style="left:' + pct(m(r.s)) + ';width:' + w + '">' +
+      (r.lbl ? '<span class="lbl" style="color:var(--orange-ink)">' + r.lbl + '</span>' : '') + '</div></div></div>';
+  });
+  html += '<div class="tl-axis"><div></div><div class="tl-ticks">' + ticks + '</div></div>';
+  document.getElementById("tl").innerHTML = html;
+
+  // ---- horizontal bars: only when there are numbers; same entity = same colour everywhere, baseline/control in gray
+  var hbarEl = document.getElementById("hbar");
+  if (!hbarEl) return;
+  var bars = [
+    { name: "指标 A", sub: "口径说明", v: 120, label: "120", color: "var(--gray)", ink: "var(--text-2)" },
+    { name: "指标 B", sub: "口径说明", v: 30, label: "30", color: "var(--blue)", ink: "var(--blue-ink)" }
+  ];
+  var max = Math.max.apply(null, bars.map(function (b) { return b.v; })) * 1.25, hb = "";
+  bars.forEach(function (b) {
+    var w = (b.v / max * 100);
+    hb += '<div class="hbar-row"><div class="hbar-name">' + b.name + '<span class="sub">' + b.sub + '</span></div>' +
+      '<div class="hbar-track"><div class="hbar-fill" style="width:' + w + '%;background:' + b.color + '"></div>' +
+      '<span class="hbar-val" style="left:calc(' + w + '% + 6px);color:' + b.ink + '">' + (b.label || b.v) + '</span></div></div>';
+  });
+  hbarEl.innerHTML = hb;
+})();
+</script>
+</body>
+</html>
