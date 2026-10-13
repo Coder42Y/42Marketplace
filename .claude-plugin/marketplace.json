@@ -103,6 +103,15 @@
       "author": {
         "name": "Coder42Y"
       }
+    },
+    {
+      "name": "daily-report",
+      "source": "./skills/daily-report",
+      "description": "把一天的 Claude Code session 整理成每日例会汇报 HTML：先对齐大纲，白话层加技术说明层",
+      "version": "1.0.0",
+      "author": {
+        "name": "Coder42Y"
+      }
     }
   ]
 }
