@@ -58,15 +58,13 @@ ln -s ~/42Marketplace/skills/daily-report ~/.claude/skills/daily-report
 | `scripts/extract_day.py` | 拉取某一天的 session，生成索引和精简文本 |
 | `scripts/publish.sh` | 可选：复制到 `~/standup/` 并起一个局域网静态服务，不占用已有端口 |
 
-想让报告的密度更贴近你的习惯，可以把一份你满意的日报放到 `references/example-<日期>.html`。之后生成报告时，会先参考它。
-
 ---
 
 ## 前置依赖
 
 - **Claude Code**：要读它保存在 `~/.claude/projects` 下的 session 记录，所以只支持 Claude Code
 - **Python** `>= 3.9`，只用标准库
-- **可选**：`gh` CLI，用来核对 PR / issue 状态；`publish.sh` 需要 `ss`、`curl`
+- **可选**：`gh` CLI，用来核对 PR / issue 状态；`publish.sh` 需要 `curl`
 
 ---
 

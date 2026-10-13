@@ -11,7 +11,6 @@ description: 把某一天在某个项目里跑过的 Claude Code session 整理�
 下面提到的路径都相对本 skill 的目录（调用时给出的 base directory）。
 
 - **骨架**：`assets/skeleton.html`。单文件，CSS、时间线和柱状图的 JS 都写好了，把【】里的占位换成当天的内容，用不上的组件整块删掉。
-- **标杆**：如果 `references/` 下有 `example-*.html`，先打开看一遍，那是用户认可过长度、粒度和写法的真实报告，新报告的密度向它看齐。
 - **语言和粒度细则**：`references/style.md`。
 
 ## 流程
